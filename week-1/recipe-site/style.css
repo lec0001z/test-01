@@ -1,0 +1,196 @@
+/* === Reset & Base === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #faf7f2;
+  color: #2d2d2d;
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* === Hero === */
+.hero {
+  background: linear-gradient(135deg, #e85d04, #f48c06, #ffba08);
+  color: white;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+/* === Container === */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+/* === Recipe Grid (index) === */
+.recipes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.recipe-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.recipe-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.recipe-emoji {
+  font-size: 3.5rem;
+  flex-shrink: 0;
+}
+
+.recipe-info h2 {
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+}
+
+.recipe-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.recipe-info p {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* === Detail Page === */
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: #e85d04;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.detail-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.detail-header .emoji-large {
+  font-size: 5rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.detail-header h1 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.detail-meta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.95rem;
+  color: #888;
+}
+
+/* === Sections === */
+.section {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.section h2 {
+  font-size: 1.3rem;
+  margin-bottom: 16px;
+  color: #e85d04;
+}
+
+.section ul,
+.section ol {
+  padding-left: 20px;
+}
+
+.section li {
+  margin-bottom: 10px;
+  line-height: 1.7;
+}
+
+.section li strong {
+  color: #d35400;
+}
+
+/* === Footer === */
+footer {
+  text-align: center;
+  padding: 32px 20px;
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+/* === Responsive === */
+@media (max-width: 600px) {
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .recipe-card {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .recipe-emoji {
+    font-size: 2.5rem;
+  }
+
+  .recipe-info h2 {
+    font-size: 1.15rem;
+  }
+
+  .detail-header .emoji-large {
+    font-size: 3.5rem;
+  }
+
+  .detail-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .detail-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
