@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR코드 생성기</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            padding: 40px 20px 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-bottom: 1px solid #2a2a4a;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            max-width: 1100px;
+            width: 100%;
+            padding: 40px 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* 왼쪽: 설정 패널 */
+        .settings-panel {
+            flex: 1;
+            min-width: 340px;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #bbb;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #12121f;
+            border: 2px solid #2a2a4a;
+            border-radius: 12px;
+            color: #e0e0e0;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .url-input:focus {
+            border-color: #667eea;
+        }
+
+        .url-input::placeholder {
+            color: #555;
+        }
+
+        /* 슬라이더 */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #2a2a4a;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .slider-value {
+            min-width: 55px;
+            text-align: center;
+            font-size: 0.95rem;
+            color: #667eea;
+            font-weight: 700;
+            background: #12121f;
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        /* 색상 선택 */
+        .color-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .color-picker-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #12121f;
+            padding: 10px 14px;
+            border-radius: 12px;
+        }
+
+        .color-picker-group span {
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 36px;
+            height: 36px;
+            border: 2px solid #2a2a4a;
+            border-radius: 8px;
+            cursor: pointer;
+            background: none;
+            padding: 2px;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 5px;
+        }
+
+        .hex-display {
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            color: #bbb;
+        }
+
+        /* 에러 보정 레벨 */
+        .level-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .level-btn {
+            flex: 1;
+            padding: 10px;
+            background: #12121f;
+            border: 2px solid #2a2a4a;
+            border-radius: 10px;
+            color: #999;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .level-btn:hover {
+            border-color: #667eea;
+            color: #ccc;
+        }
+
+        .level-btn.active {
+            background: linear-gradient(135deg, #667eea22, #764ba222);
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .level-btn small {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 400;
+            margin-top: 2px;
+            color: #666;
+        }
+
+        /* 생성 버튼 */
+        .generate-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 오른쪽: 미리보기 패널 */
+        .preview-panel {
+            flex: 0 0 400px;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .qr-preview-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 16px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 350px;
+            justify-content: center;
+        }
+
+        .qr-placeholder {
+            color: #444;
+            font-size: 1rem;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .qr-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        #qr-canvas {
+            border-radius: 8px;
+            image-rendering: pixelated;
+        }
+
+        .qr-info {
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+        }
+
+        /* 다운로드 버튼들 */
+        .download-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .download-btn {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #2a2a4a;
+            border-radius: 12px;
+            background: #1a1a2e;
+            color: #ccc;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: #667eea11;
+        }
+
+        .download-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .download-btn:disabled:hover {
+            border-color: #2a2a4a;
+            color: #ccc;
+            background: #1a1a2e;
+        }
+
+        .download-btn .fmt {
+            display: block;
+            font-size: 0.75rem;
+            color: #666;
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        /* 히스토리 */
+        .history-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .history-card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clear-history {
+            font-size: 0.75rem;
+            color: #666;
+            cursor: pointer;
+            text-transform: none;
+            letter-spacing: 0;
+            padding: 4px 10px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: none;
+            transition: all 0.2s;
+        }
+
+        .clear-history:hover {
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 2px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #12121f;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .history-item:hover {
+            background: #1e1e35;
+        }
+
+        .history-item canvas {
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .history-item-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .history-empty {
+            color: #444;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* 토스트 알림 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #667eea;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 반응형 */
+        @media (max-width: 800px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .preview-panel {
+                flex: none;
+                width: 100%;
+                max-width: 480px;
+            }
+
+            .settings-panel {
+                max-width: 100%;
+            }
+
+            header h1 {
+                font-size: 1.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>QR코드 생성기</h1>
+    <p>URL을 입력하고 나만의 QR코드를 만들어 보세요</p>
+</header>
+
+<div class="container">
+    <!-- 설정 패널 -->
+    <div class="settings-panel">
+        <div class="card">
+            <h2>URL 입력</h2>
+            <div class="input-group">
+                <input type="text" id="url-input" class="url-input" placeholder="https://example.com" spellcheck="false">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>크기 설정</h2>
+            <div class="input-group">
+                <label>QR코드 크기</label>
+                <div class="slider-row">
+                    <input type="range" id="size-slider" min="128" max="1024" value="300" step="1">
+                    <span class="slider-value" id="size-value">300px</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>여백 (모듈 수)</label>
+                <div class="slider-row">
+                    <input type="range" id="margin-slider" min="0" max="8" value="2" step="1">
+                    <span class="slider-value" id="margin-value">2</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>색상 설정</h2>
+            <div class="color-row">
+                <div class="color-picker-group">
+                    <input type="color" id="fg-color" value="#000000">
+                    <div>
+                        <span>전경색</span>
+                        <div class="hex-display" id="fg-hex">#000000</div>
+                    </div>
+                </div>
+                <div class="color-picker-group">
+                    <input type="color" id="bg-color" value="#ffffff">
+                    <div>
+                        <span>배경색</span>
+                        <div class="hex-display" id="bg-hex">#FFFFFF</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>에러 보정 레벨</h2>
+            <div class="level-buttons">
+                <button class="level-btn" data-level="L">L<small>7%</small></button>
+                <button class="level-btn active" data-level="M">M<small>15%</small></button>
+                <button class="level-btn" data-level="Q">Q<small>25%</small></button>
+                <button class="level-btn" data-level="H">H<small>30%</small></button>
+            </div>
+        </div>
+
+        <button class="generate-btn" id="generate-btn">QR코드 생성</button>
+    </div>
+
+    <!-- 미리보기 패널 -->
+    <div class="preview-panel">
+        <div class="qr-preview-card" id="preview-card">
+            <div class="qr-placeholder" id="placeholder">
+                <div class="icon">⬜</div>
+                URL을 입력하고<br>생성 버튼을 눌러주세요
+            </div>
+            <canvas id="qr-canvas" style="display: none;"></canvas>
+            <div class="qr-info" id="qr-info" style="display: none;"></div>
+        </div>
+
+        <div class="download-buttons">
+            <button class="download-btn" id="dl-png" disabled>
+                PNG 다운로드
+                <span class="fmt">래스터 이미지</span>
+            </button>
+            <button class="download-btn" id="dl-svg" disabled>
+                SVG 다운로드
+                <span class="fmt">벡터 이미지</span>
+            </button>
+            <button class="download-btn" id="dl-copy" disabled>
+                클립보드 복사
+                <span class="fmt">이미지 복사</span>
+            </button>
+        </div>
+
+        <div class="history-card">
+            <h2>
+                최근 생성 기록
+                <button class="clear-history" id="clear-history">전체 삭제</button>
+            </h2>
+            <div class="history-list" id="history-list">
+                <div class="history-empty">아직 생성된 QR코드가 없습니다</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const urlInput = document.getElementById('url-input');
+    const sizeSlider = document.getElementById('size-slider');
+    const sizeValue = document.getElementById('size-value');
+    const marginSlider = document.getElementById('margin-slider');
+    const marginValue = document.getElementById('margin-value');
+    const fgColor = document.getElementById('fg-color');
+    const bgColor = document.getElementById('bg-color');
+    const fgHex = document.getElementById('fg-hex');
+    const bgHex = document.getElementById('bg-hex');
+    const generateBtn = document.getElementById('generate-btn');
+    const qrCanvas = document.getElementById('qr-canvas');
+    const placeholder = document.getElementById('placeholder');
+    const qrInfo = document.getElementById('qr-info');
+    const dlPng = document.getElementById('dl-png');
+    const dlSvg = document.getElementById('dl-svg');
+    const dlCopy = document.getElementById('dl-copy');
+    const historyList = document.getElementById('history-list');
+    const clearHistory = document.getElementById('clear-history');
+    const toast = document.getElementById('toast');
+
+    let errorLevel = 'M';
+    let currentSvgString = '';
+    let history = JSON.parse(localStorage.getItem('qr-history') || '[]');
+
+    // 슬라이더 업데이트
+    sizeSlider.addEventListener('input', () => {
+        sizeValue.textContent = sizeSlider.value + 'px';
+    });
+
+    marginSlider.addEventListener('input', () => {
+        marginValue.textContent = marginSlider.value;
+    });
+
+    // 색상 업데이트
+    fgColor.addEventListener('input', () => {
+        fgHex.textContent = fgColor.value.toUpperCase();
+    });
+
+    bgColor.addEventListener('input', () => {
+        bgHex.textContent = bgColor.value.toUpperCase();
+    });
+
+    // 에러 보정 레벨
+    document.querySelectorAll('.level-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            errorLevel = btn.dataset.level;
+        });
+    });
+
+    // 엔터키로 생성
+    urlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') generateQR();
+    });
+
+    generateBtn.addEventListener('click', generateQR);
+
+    function generateQR() {
+        const url = urlInput.value.trim();
+        if (!url) {
+            showToast('URL을 입력해 주세요');
+            urlInput.focus();
+            return;
+        }
+
+        const size = parseInt(sizeSlider.value);
+        const margin = parseInt(marginSlider.value);
+        const fg = fgColor.value;
+        const bg = bgColor.value;
+
+        // Canvas에 QR코드 그리기
+        QRCode.toCanvas(qrCanvas, url, {
+            width: size,
+            margin: margin,
+            color: {
+                dark: fg,
+                light: bg
+            },
+            errorCorrectionLevel: errorLevel
+        }, function (error) {
+            if (error) {
+                showToast('QR코드 생성에 실패했습니다');
+                console.error(error);
+                return;
+            }
+
+            placeholder.style.display = 'none';
+            qrCanvas.style.display = 'block';
+            qrInfo.style.display = 'block';
+            qrInfo.textContent = `${size} × ${size}px · 에러 보정: ${errorLevel}`;
+
+            dlPng.disabled = false;
+            dlSvg.disabled = false;
+            dlCopy.disabled = false;
+
+            // SVG도 미리 생성
+            QRCode.toString(url, {
+                type: 'svg',
+                width: size,
+                margin: margin,
+                color: { dark: fg, light: bg },
+                errorCorrectionLevel: errorLevel
+            }, function (err, svgStr) {
+                if (!err) currentSvgString = svgStr;
+            });
+
+            // 히스토리에 추가
+            addToHistory(url, size, margin, fg, bg, errorLevel);
+            showToast('QR코드가 생성되었습니다!');
+        });
+    }
+
+    // PNG 다운로드
+    dlPng.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = 'qrcode.png';
+        link.href = qrCanvas.toDataURL('image/png');
+        link.click();
+        showToast('PNG 파일을 다운로드합니다');
+    });
+
+    // SVG 다운로드
+    dlSvg.addEventListener('click', () => {
+        if (!currentSvgString) return;
+        const blob = new Blob([currentSvgString], { type: 'image/svg+xml' });
+        const link = document.createElement('a');
+        link.download = 'qrcode.svg';
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+        showToast('SVG 파일을 다운로드합니다');
+    });
+
+    // 클립보드 복사
+    dlCopy.addEventListener('click', async () => {
+        try {
+            const blob = await new Promise(resolve => qrCanvas.toBlob(resolve, 'image/png'));
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]);
+            showToast('클립보드에 복사되었습니다!');
+        } catch {
+            showToast('복사에 실패했습니다');
+        }
+    });
+
+    // 히스토리 관리
+    function addToHistory(url, size, margin, fg, bg, level) {
+        // 같은 URL 중복 제거
+        history = history.filter(h => h.url !== url);
+        history.unshift({ url, size, margin, fg, bg, level });
+        if (history.length > 10) history.pop();
+        localStorage.setItem('qr-history', JSON.stringify(history));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        if (history.length === 0) {
+            historyList.innerHTML = '<div class="history-empty">아직 생성된 QR코드가 없습니다</div>';
+            return;
+        }
+
+        historyList.innerHTML = '';
+        history.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+
+            const miniCanvas = document.createElement('canvas');
+            QRCode.toCanvas(miniCanvas, item.url, {
+                width: 40,
+                margin: 1,
+                color: { dark: item.fg, light: item.bg },
+                errorCorrectionLevel: item.level
+            });
+
+            const text = document.createElement('div');
+            text.className = 'history-item-text';
+            text.textContent = item.url;
+
+            div.appendChild(miniCanvas);
+            div.appendChild(text);
+
+            div.addEventListener('click', () => {
+                urlInput.value = item.url;
+                sizeSlider.value = item.size;
+                sizeValue.textContent = item.size + 'px';
+                marginSlider.value = item.margin;
+                marginValue.textContent = item.margin;
+                fgColor.value = item.fg;
+                fgHex.textContent = item.fg.toUpperCase();
+                bgColor.value = item.bg;
+                bgHex.textContent = item.bg.toUpperCase();
+
+                document.querySelectorAll('.level-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.level === item.level);
+                });
+                errorLevel = item.level;
+
+                generateQR();
+            });
+
+            historyList.appendChild(div);
+        });
+    }
+
+    clearHistory.addEventListener('click', () => {
+        history = [];
+        localStorage.removeItem('qr-history');
+        renderHistory();
+        showToast('기록이 삭제되었습니다');
+    });
+
+    // 토스트 알림
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // 초기 히스토리 렌더링
+    renderHistory();
+</script>
+
+</body>
+</html>

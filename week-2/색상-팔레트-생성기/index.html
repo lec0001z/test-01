@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>색상 팔레트 생성기</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            padding: 48px 20px 32px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .input-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 0 20px 40px;
+            flex-wrap: wrap;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #333;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .color-picker-wrapper:hover {
+            border-color: #555;
+        }
+
+        .color-picker-wrapper input[type="color"] {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 80px;
+            height: 80px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .hex-input {
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 1.2rem;
+            color: #fff;
+            width: 200px;
+            text-align: center;
+            font-family: 'Consolas', monospace;
+            transition: border-color 0.3s;
+        }
+
+        .hex-input:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 1rem;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:active {
+            transform: scale(0.97);
+        }
+
+        .random-btn {
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 1rem;
+            color: #aaa;
+            cursor: pointer;
+            transition: border-color 0.3s, color 0.3s;
+        }
+
+        .random-btn:hover {
+            border-color: #555;
+            color: #fff;
+        }
+
+        .main-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        /* Base Color Display */
+        .base-color-section {
+            margin-bottom: 48px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .base-color-card {
+            display: flex;
+            gap: 24px;
+            background: #1a1a1a;
+            border-radius: 16px;
+            overflow: hidden;
+            flex-wrap: wrap;
+        }
+
+        .base-color-preview {
+            width: 200px;
+            min-height: 180px;
+            flex-shrink: 0;
+        }
+
+        .base-color-info {
+            padding: 24px 24px 24px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .color-format {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .format-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 40px;
+            flex-shrink: 0;
+        }
+
+        .format-value {
+            font-family: 'Consolas', monospace;
+            font-size: 0.95rem;
+            color: #ccc;
+            background: #111;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            flex: 1;
+        }
+
+        .format-value:hover {
+            background: #222;
+            color: #fff;
+        }
+
+        .format-value.copied {
+            background: #1a3a1a;
+            color: #4ade80;
+        }
+
+        /* Palette Section */
+        .palette-section {
+            margin-bottom: 48px;
+        }
+
+        .palette-row {
+            display: flex;
+            border-radius: 16px;
+            overflow: hidden;
+            height: 120px;
+            margin-bottom: 12px;
+        }
+
+        .palette-color {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: flex 0.3s, filter 0.2s;
+            position: relative;
+        }
+
+        .palette-color:hover {
+            flex: 1.5;
+        }
+
+        .palette-color .hex-label {
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        .palette-color .percent-label {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .palette-color.copied-indicator::after {
+            content: 'Copied!';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.5);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        /* Complementary / Analogous */
+        .harmony-section {
+            margin-bottom: 48px;
+        }
+
+        .harmony-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .harmony-card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .harmony-card h3 {
+            padding: 16px 20px 12px;
+            font-size: 0.9rem;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .harmony-colors {
+            display: flex;
+            height: 80px;
+        }
+
+        .harmony-color {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: flex 0.3s;
+            position: relative;
+        }
+
+        .harmony-color:hover {
+            flex: 1.5;
+        }
+
+        .harmony-color span {
+            font-family: 'Consolas', monospace;
+            font-size: 0.75rem;
+            padding: 3px 6px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .harmony-info {
+            padding: 12px 20px 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .harmony-info .chip {
+            font-family: 'Consolas', monospace;
+            font-size: 0.75rem;
+            background: #111;
+            padding: 4px 10px;
+            border-radius: 6px;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .harmony-info .chip:hover {
+            color: #fff;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Hidden state */
+        .main-content.hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.6rem; }
+            .base-color-preview { width: 100%; min-height: 120px; }
+            .base-color-info { padding: 16px; }
+            .palette-row { height: 90px; }
+            .palette-color .hex-label { font-size: 0.65rem; }
+            .input-section { gap: 10px; }
+            .hex-input { width: 150px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Color Palette Generator</h1>
+        <p>색상을 입력하면 밝기 변형과 색상 조화를 생성합니다</p>
+    </header>
+
+    <div class="input-section">
+        <div class="color-picker-wrapper" id="pickerWrapper">
+            <input type="color" id="colorPicker" value="#6366f1">
+        </div>
+        <input type="text" class="hex-input" id="hexInput" value="#6366f1" placeholder="#000000" maxlength="7">
+        <button class="generate-btn" id="generateBtn">생성하기</button>
+        <button class="random-btn" id="randomBtn">랜덤 색상</button>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <!-- Base Color -->
+        <div class="base-color-section">
+            <div class="section-title">기본 색상 - 같은 정보, 다른 형태</div>
+            <div class="base-color-card">
+                <div class="base-color-preview" id="basePreview"></div>
+                <div class="base-color-info" id="baseInfo"></div>
+            </div>
+        </div>
+
+        <!-- Lighter palette -->
+        <div class="palette-section">
+            <div class="section-title">밝은 변형 (Tints)</div>
+            <div class="palette-row" id="lighterPalette"></div>
+        </div>
+
+        <!-- Darker palette -->
+        <div class="palette-section">
+            <div class="section-title">어두운 변형 (Shades)</div>
+            <div class="palette-row" id="darkerPalette"></div>
+        </div>
+
+        <!-- Color Harmony -->
+        <div class="harmony-section">
+            <div class="section-title">색상 조화 (Color Harmony)</div>
+            <div class="harmony-grid" id="harmonyGrid"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ---- Color Utilities ----
+        function hexToRgb(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            const n = parseInt(hex, 16);
+            return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(v => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0')).join('');
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+        }
+
+        function hslToRgb(h, s, l) {
+            h /= 360; s /= 100; l /= 100;
+            let r, g, b;
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        function rgbToCmyk(r, g, b) {
+            if (r === 0 && g === 0 && b === 0) return { c: 0, m: 0, y: 0, k: 100 };
+            const rr = r / 255, gg = g / 255, bb = b / 255;
+            const k = 1 - Math.max(rr, gg, bb);
+            return {
+                c: Math.round(((1 - rr - k) / (1 - k)) * 100),
+                m: Math.round(((1 - gg - k) / (1 - k)) * 100),
+                y: Math.round(((1 - bb - k) / (1 - k)) * 100),
+                k: Math.round(k * 100)
+            };
+        }
+
+        function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            const d = max - min;
+            let h, s = max === 0 ? 0 : d / max, v = max;
+            if (max === min) {
+                h = 0;
+            } else {
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
+        }
+
+        function getContrastColor(hex) {
+            const { r, g, b } = hexToRgb(hex);
+            const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return lum > 0.55 ? '#000000' : '#ffffff';
+        }
+
+        // ---- Tints & Shades ----
+        function generateTints(hex, count = 5) {
+            const { r, g, b } = hexToRgb(hex);
+            const results = [];
+            for (let i = 1; i <= count; i++) {
+                const factor = i / (count + 1);
+                results.push(rgbToHex(
+                    r + (255 - r) * factor,
+                    g + (255 - g) * factor,
+                    b + (255 - b) * factor
+                ));
+            }
+            return results;
+        }
+
+        function generateShades(hex, count = 5) {
+            const { r, g, b } = hexToRgb(hex);
+            const results = [];
+            for (let i = 1; i <= count; i++) {
+                const factor = 1 - i / (count + 1);
+                results.push(rgbToHex(r * factor, g * factor, b * factor));
+            }
+            return results;
+        }
+
+        // ---- Color Harmony ----
+        function getHarmony(hex) {
+            const { r, g, b } = hexToRgb(hex);
+            const hsl = rgbToHsl(r, g, b);
+            const h = hsl.h, s = hsl.s, l = hsl.l;
+
+            const fromH = (hh) => {
+                const rgb = hslToRgb(((hh % 360) + 360) % 360, s, l);
+                return rgbToHex(rgb.r, rgb.g, rgb.b);
+            };
+
+            return {
+                complementary: [hex, fromH(h + 180)],
+                analogous: [fromH(h - 30), hex, fromH(h + 30)],
+                triadic: [hex, fromH(h + 120), fromH(h + 240)],
+                splitComplementary: [hex, fromH(h + 150), fromH(h + 210)],
+                tetradic: [hex, fromH(h + 90), fromH(h + 180), fromH(h + 270)],
+            };
+        }
+
+        // ---- UI ----
+        const $ = id => document.getElementById(id);
+        let currentHex = '#6366f1';
+
+        function showToast(msg) {
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1500);
+        }
+
+        function copyText(text, el) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`${text} 복사됨!`);
+                if (el) {
+                    el.classList.add('copied');
+                    setTimeout(() => el.classList.remove('copied'), 1000);
+                }
+            });
+        }
+
+        function renderBaseColor(hex) {
+            const { r, g, b } = hexToRgb(hex);
+            const hsl = rgbToHsl(r, g, b);
+            const hsv = rgbToHsv(r, g, b);
+            const cmyk = rgbToCmyk(r, g, b);
+
+            $('basePreview').style.background = hex;
+
+            const formats = [
+                ['HEX', hex.toUpperCase()],
+                ['RGB', `rgb(${r}, ${g}, ${b})`],
+                ['HSL', `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`],
+                ['HSV', `hsv(${hsv.h}, ${hsv.s}%, ${hsv.v}%)`],
+                ['CMYK', `cmyk(${cmyk.c}%, ${cmyk.m}%, ${cmyk.y}%, ${cmyk.k}%)`],
+            ];
+
+            $('baseInfo').innerHTML = formats.map(([label, value]) =>
+                `<div class="color-format">
+                    <span class="format-label">${label}</span>
+                    <span class="format-value" onclick="copyText('${value}', this)">${value}</span>
+                </div>`
+            ).join('');
+        }
+
+        function renderPalette(containerId, colors, labels) {
+            const container = $(containerId);
+            container.innerHTML = colors.map((c, i) => {
+                const textColor = getContrastColor(c);
+                return `<div class="palette-color" style="background:${c}; color:${textColor}"
+                            onclick="copyText('${c.toUpperCase()}', this)">
+                    <span class="hex-label">${c.toUpperCase()}</span>
+                    <span class="percent-label">${labels[i]}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function renderHarmony(hex) {
+            const harmonies = getHarmony(hex);
+            const names = {
+                complementary: '보색 (Complementary)',
+                analogous: '유사색 (Analogous)',
+                triadic: '삼색 조화 (Triadic)',
+                splitComplementary: '분리 보색 (Split-Complementary)',
+                tetradic: '사각 조화 (Tetradic)',
+            };
+
+            $('harmonyGrid').innerHTML = Object.entries(harmonies).map(([key, colors]) =>
+                `<div class="harmony-card">
+                    <h3>${names[key]}</h3>
+                    <div class="harmony-colors">
+                        ${colors.map(c => {
+                            const tc = getContrastColor(c);
+                            return `<div class="harmony-color" style="background:${c}; color:${tc}"
+                                        onclick="copyText('${c.toUpperCase()}')">
+                                <span>${c.toUpperCase()}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    <div class="harmony-info">
+                        ${colors.map(c => `<span class="chip" onclick="copyText('${c.toUpperCase()}')">${c.toUpperCase()}</span>`).join('')}
+                    </div>
+                </div>`
+            ).join('');
+        }
+
+        function generate(hex) {
+            hex = hex.trim().toLowerCase();
+            if (!hex.startsWith('#')) hex = '#' + hex;
+            if (!/^#[0-9a-f]{6}$/.test(hex)) {
+                showToast('올바른 HEX 코드를 입력하세요 (예: #ff5733)');
+                return;
+            }
+
+            currentHex = hex;
+            $('hexInput').value = hex;
+            $('colorPicker').value = hex;
+            $('pickerWrapper').style.borderColor = hex;
+            $('mainContent').classList.remove('hidden');
+
+            renderBaseColor(hex);
+
+            const tints = generateTints(hex, 5);
+            const tintLabels = ['17%', '33%', '50%', '67%', '83%'];
+            renderPalette('lighterPalette', tints, tintLabels);
+
+            const shades = generateShades(hex, 5);
+            const shadeLabels = ['83%', '67%', '50%', '33%', '17%'];
+            renderPalette('darkerPalette', shades, shadeLabels);
+
+            renderHarmony(hex);
+        }
+
+        function randomHex() {
+            return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        }
+
+        // Events
+        $('generateBtn').addEventListener('click', () => generate($('hexInput').value));
+        $('hexInput').addEventListener('keydown', e => { if (e.key === 'Enter') generate($('hexInput').value); });
+        $('colorPicker').addEventListener('input', e => {
+            $('hexInput').value = e.target.value;
+            generate(e.target.value);
+        });
+        $('randomBtn').addEventListener('click', () => {
+            const hex = randomHex();
+            $('hexInput').value = hex;
+            generate(hex);
+        });
+
+        // Initial render
+        generate('#6366f1');
+    </script>
+</body>
+</html>

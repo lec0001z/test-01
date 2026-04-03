@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D-Day 카운터</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide-up { animation: slide-up 0.4s ease-out; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+
+    function Button({ variant = 'primary', size = 'md', disabled = false, onClick, className = '', children }) {
+      const base = 'font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer';
+      const variants = {
+        primary: 'bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 shadow-lg shadow-indigo-200',
+        secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-700 focus:ring-gray-400',
+        danger: 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-400 shadow-lg shadow-red-200',
+        ghost: 'bg-transparent hover:bg-gray-100 text-gray-600 focus:ring-gray-300',
+      };
+      const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-5 py-2.5 text-base', lg: 'px-7 py-3.5 text-lg' };
+      return (
+        <button
+          onClick={onClick}
+          disabled={disabled}
+          className={`${base} ${variants[variant]} ${sizes[size]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    function Input({ type = 'text', label, value, onChange, placeholder, error, disabled = false, className = '' }) {
+      return (
+        <div className={`flex flex-col gap-1.5 ${className}`}>
+          {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
+          <input
+            type={type}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`px-4 py-2.5 border rounded-xl text-gray-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent ${error ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'} ${disabled ? 'opacity-50 bg-gray-50' : ''}`}
+          />
+          {error && <span className="text-xs text-red-500">{error}</span>}
+        </div>
+      );
+    }
+
+    function Card({ className = '', children }) {
+      return (
+        <div className={`bg-white rounded-2xl shadow-lg p-6 ${className}`}>
+          {children}
+        </div>
+      );
+    }
+
+    function Modal({ isOpen, onClose, title, children }) {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-slide-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">{title}</h3>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none cursor-pointer">&times;</button>
+            </div>
+            {children}
+          </div>
+        </div>
+      );
+    }
+
+    function TimeBlock({ value, label }) {
+      return (
+        <div className="flex flex-col items-center">
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center shadow-lg shadow-indigo-200">
+            <span className="text-3xl sm:text-4xl font-bold tabular-nums">{String(value).padStart(2, '0')}</span>
+          </div>
+          <span className="text-xs sm:text-sm text-gray-500 mt-2 font-medium">{label}</span>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🧩 D-Day 계산 훅
+    // ========================================
+
+    function useCountdown(targetDate) {
+      const [now, setNow] = useState(new Date());
+
+      useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      return useMemo(() => {
+        if (!targetDate) return null;
+        const target = new Date(targetDate);
+        target.setHours(0, 0, 0, 0);
+        const diff = target.getTime() - now.getTime();
+        const isPast = diff < 0;
+        const absDiff = Math.abs(diff);
+
+        const totalSeconds = Math.floor(absDiff / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        return { days, hours, minutes, seconds, isPast, totalSeconds };
+      }, [targetDate, now]);
+    }
+
+    // ========================================
+    // 📄 D-Day 카드 컴포넌트
+    // ========================================
+
+    function DdayCard({ item, onDelete }) {
+      const countdown = useCountdown(item.date);
+      if (!countdown) return null;
+
+      const { days, hours, minutes, seconds, isPast } = countdown;
+
+      return (
+        <Card className="animate-slide-up">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-800">{item.title}</h3>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {new Date(item.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+              </p>
+            </div>
+            <button onClick={() => onDelete(item.id)} className="text-gray-300 hover:text-red-400 transition-colors cursor-pointer" title="삭제">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+
+          {isPast ? (
+            <div className="text-center py-4">
+              <span className="text-3xl sm:text-4xl font-bold text-rose-500">D+{days}</span>
+              <p className="text-sm text-gray-400 mt-2">{days}일 지났습니다</p>
+            </div>
+          ) : days === 0 && hours === 0 && minutes === 0 && seconds === 0 ? (
+            <div className="text-center py-4">
+              <span className="text-3xl sm:text-4xl font-bold text-emerald-500 animate-pulse-slow">D-Day!</span>
+              <p className="text-sm text-gray-400 mt-2">오늘이 바로 그 날입니다!</p>
+            </div>
+          ) : (
+            <div>
+              <div className="text-center mb-4">
+                <span className="text-2xl sm:text-3xl font-bold text-indigo-600">D-{days}</span>
+              </div>
+              <div className="flex justify-center gap-3 sm:gap-4">
+                <TimeBlock value={days} label="일" />
+                <TimeBlock value={hours} label="시간" />
+                <TimeBlock value={minutes} label="분" />
+                <TimeBlock value={seconds} label="초" />
+              </div>
+            </div>
+          )}
+        </Card>
+      );
+    }
+
+    // ========================================
+    // 🚀 App Component
+    // ========================================
+
+    const STORAGE_KEY = 'dday-counter-items';
+
+    function App() {
+      const [items, setItems] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          return saved ? JSON.parse(saved) : [];
+        } catch { return []; }
+      });
+      const [modalOpen, setModalOpen] = useState(false);
+      const [title, setTitle] = useState('');
+      const [date, setDate] = useState('');
+
+      useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      }, [items]);
+
+      const handleAdd = () => {
+        if (!title.trim() || !date) return;
+        setItems(prev => [...prev, { id: Date.now(), title: title.trim(), date }]);
+        setTitle('');
+        setDate('');
+        setModalOpen(false);
+      };
+
+      const handleDelete = (id) => {
+        setItems(prev => prev.filter(item => item.id !== id));
+      };
+
+      const sorted = useMemo(() => {
+        return [...items].sort((a, b) => new Date(a.date) - new Date(b.date));
+      }, [items]);
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50">
+          {/* Header */}
+          <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100">
+            <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+              <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <span className="text-2xl">📅</span> D-Day 카운터
+              </h1>
+              <Button size="sm" onClick={() => setModalOpen(true)}>+ 추가</Button>
+            </div>
+          </header>
+
+          {/* Content */}
+          <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+            {sorted.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-6xl mb-4">🎯</p>
+                <p className="text-gray-500 text-lg">아직 등록된 D-Day가 없습니다</p>
+                <p className="text-gray-400 text-sm mt-1">위의 추가 버튼을 눌러 시작하세요!</p>
+              </div>
+            ) : (
+              sorted.map(item => (
+                <DdayCard key={item.id} item={item} onDelete={handleDelete} />
+              ))
+            )}
+          </main>
+
+          {/* Add Modal */}
+          <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="새 D-Day 추가">
+            <div className="space-y-4">
+              <Input
+                label="제목"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="예: 시험일, 여행, 생일"
+              />
+              <Input
+                type="date"
+                label="목표 날짜"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+              />
+              <div className="flex gap-3 pt-2">
+                <Button variant="secondary" onClick={() => setModalOpen(false)} className="flex-1">취소</Button>
+                <Button onClick={handleAdd} disabled={!title.trim() || !date} className="flex-1">추가하기</Button>
+              </div>
+            </div>
+          </Modal>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🎬 Rendering
+    // ========================================
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
