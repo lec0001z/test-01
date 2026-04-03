@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카드 컴포넌트</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #1e293b;
+      font-family: 'Segoe UI', sans-serif;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding: 40px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      width: 280px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      transform: scale(1.03);
+    }
+
+    .card-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .card-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+      color: #1e293b;
+    }
+
+    .card-text {
+      margin: 0;
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .card-tag {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 12px;
+      background: #e0f2fe;
+      color: #0284c7;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="height: 160px; background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+    <div class="card-body">
+      <h3 class="card-title">React 기초</h3>
+      <p class="card-text">컴포넌트 기반 UI 라이브러리의 핵심 개념을 배워봅시다.</p>
+      <span class="card-tag">프론트엔드</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="height: 160px; background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+    <div class="card-body">
+      <h3 class="card-title">CSS 애니메이션</h3>
+      <p class="card-text">트랜지션과 키프레임으로 생동감 있는 UI를 만들어봅시다.</p>
+      <span class="card-tag">디자인</span>
+    </div>
+  </div>
+</body>
+</html>

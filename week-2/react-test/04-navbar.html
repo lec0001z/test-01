@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>네비게이션 바</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f8fafc;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 40px;
+      height: 64px;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+    }
+
+    .navbar-logo {
+      font-size: 20px;
+      font-weight: 800;
+      color: #3b82f6;
+    }
+
+    .navbar-links {
+      display: flex;
+      list-style: none;
+      gap: 32px;
+    }
+
+    .navbar-links a {
+      text-decoration: none;
+      color: #64748b;
+      font-size: 15px;
+      font-weight: 500;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .navbar-links a:hover {
+      color: #3b82f6;
+    }
+
+    .navbar-links a.active {
+      color: #3b82f6;
+    }
+
+    .navbar-links a.active::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #3b82f6;
+      border-radius: 3px 3px 0 0;
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: calc(100vh - 64px);
+      text-align: center;
+      padding: 40px;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      color: #1e293b;
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: #64748b;
+      max-width: 500px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-logo">MyApp</div>
+    <ul class="navbar-links">
+      <li><a href="#" class="active">홈</a></li>
+      <li><a href="#">소개</a></li>
+      <li><a href="#">서비스</a></li>
+      <li><a href="#">문의</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero">
+    <h1>환영합니다</h1>
+    <p>간단하고 깔끔한 네비게이션 바 예제입니다. 스크롤해도 상단에 고정됩니다.</p>
+  </section>
+</body>
+</html>

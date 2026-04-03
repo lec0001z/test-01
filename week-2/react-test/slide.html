@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTML &amp; CSS 핵심 태그 가이드</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body, #root {
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Slide transition wrapper */
+    .slide-container {
+      position: absolute; inset: 0;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .slide-enter { opacity: 0; transform: scale(0.97) translateY(20px); }
+    .slide-active { opacity: 1; transform: scale(1) translateY(0); }
+    .slide-exit { opacity: 0; transform: scale(0.97) translateY(-20px); }
+
+    /* Element entrance animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .anim-fade-up { animation: fadeUp 0.8s ease both; }
+    .anim-fade-up-d1 { animation: fadeUp 0.8s 0.15s ease both; }
+    .anim-fade-up-d2 { animation: fadeUp 0.8s 0.3s ease both; }
+    .anim-fade-up-d3 { animation: fadeUp 0.8s 0.45s ease both; }
+    .anim-fade-up-d4 { animation: fadeUp 0.8s 0.6s ease both; }
+    .anim-scale-in { animation: scaleIn 0.7s 0.3s ease both; }
+    .anim-fade-in { animation: fadeIn 1s 0.2s ease both; }
+
+    /* Code block styling */
+    .code-block {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 20px 24px;
+      font-family: 'Fira Code', 'SF Mono', 'Cascadia Code', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #e2e8f0;
+      overflow-x: auto;
+      text-align: left;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .code-block .tag { color: #ff79c6; }
+    .code-block .attr { color: #50fa7b; }
+    .code-block .val { color: #f1fa8c; }
+    .code-block .prop { color: #8be9fd; }
+    .code-block .comment { color: #6272a4; }
+
+    /* Navigation arrows */
+    .nav-arrow {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.5); font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.3s ease;
+      opacity: 0; backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+    .nav-arrow:hover {
+      background: rgba(255,255,255,0.15); color: white;
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    }
+    body:hover .nav-arrow { opacity: 1; }
+    .nav-arrow-left { left: 24px; }
+    .nav-arrow-right { right: 24px; }
+
+    /* Mini demo containers */
+    .demo-container {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+    }
+    .demo-container-light {
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    /* Mini button demos */
+    .demo-btn {
+      padding: 10px 24px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .demo-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .demo-btn-primary { background: #3b82f6; color: white; }
+    .demo-btn-danger { background: #ef4444; color: white; }
+    .demo-btn-outline { background: transparent; border: 2px solid #3b82f6; color: #3b82f6; }
+
+    /* Mini card demo */
+    .demo-card {
+      background: white; border-radius: 12px; overflow: hidden;
+      width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      transition: transform 0.3s; display: inline-block;
+    }
+    .demo-card:hover { transform: scale(1.03); }
+
+    /* Mini form demo */
+    .demo-input {
+      width: 100%; padding: 8px 12px;
+      border: 2px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .demo-input:focus { border-color: #667eea; }
+
+    /* Mini navbar demo */
+    .demo-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 20px; height: 44px;
+      background: white; border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .demo-nav-link {
+      text-decoration: none; color: #64748b; font-size: 13px;
+      font-weight: 500; transition: color 0.2s; position: relative;
+    }
+    .demo-nav-link:hover { color: #3b82f6; }
+    .demo-nav-link.active { color: #3b82f6; }
+    .demo-nav-link.active::after {
+      content: ''; position: absolute;
+      bottom: -10px; left: 0; right: 0;
+      height: 2px; background: #3b82f6; border-radius: 2px;
+    }
+
+    /* Mini grid demo */
+    .demo-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .demo-grid-item {
+      border-radius: 8px; overflow: hidden;
+      aspect-ratio: 1; position: relative; cursor: pointer;
+    }
+    .demo-grid-item .color-fill {
+      width: 100%; height: 100%;
+      transition: transform 0.3s, filter 0.3s;
+    }
+    .demo-grid-item:hover .color-fill { transform: scale(1.05); filter: brightness(1.1); }
+    .demo-grid-item .hover-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 8px; background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      color: white; opacity: 0; transition: opacity 0.3s;
+      font-size: 11px;
+    }
+    .demo-grid-item:hover .hover-overlay { opacity: 1; }
+
+    /* Scrollbar hide */
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    /* ─────────────── Slide Components ─────────────── */
+
+    // Slide 1: Title
+    function TitleSlide() {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center relative"
+             style={{ background: 'linear-gradient(180deg, #000 0%, #1d1d1f 100%)' }}>
+          {/* Subtle accent circles */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-10"
+               style={{ background: 'radial-gradient(circle, #2563eb, transparent)', filter: 'blur(80px)' }} />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full opacity-10"
+               style={{ background: 'radial-gradient(circle, #7c3aed, transparent)', filter: 'blur(80px)' }} />
+
+          <div className="relative z-10 text-center px-8">
+            <p className="anim-fade-up text-blue-400 text-sm tracking-[0.3em] uppercase font-medium mb-6">
+              Web Development Fundamentals
+            </p>
+            <h1 className="anim-fade-up-d1 text-white text-6xl md:text-7xl font-bold tracking-tight leading-tight mb-6"
+                style={{ letterSpacing: '-0.03em' }}>
+              HTML &amp; CSS<br />핵심 태그 가이드
+            </h1>
+            <p className="anim-fade-up-d2 text-gray-400 text-xl font-light max-w-lg mx-auto leading-relaxed">
+              5가지 실전 예제로 배우는<br />웹 개발 기초
+            </p>
+            <div className="anim-fade-up-d3 mt-12 flex items-center justify-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <div className="w-2 h-2 rounded-full bg-pink-500" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+            </div>
+            <p className="anim-fade-up-d4 text-gray-600 text-xs mt-16 tracking-wider">
+              화살표 키(← →)로 슬라이드를 넘기세요
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Slide 2: Button
+    function ButtonSlide() {
+      return (
+        <div className="w-full h-full flex items-center justify-center"
+             style={{ background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%)' }}>
+          <div className="max-w-5xl w-full px-12 grid grid-cols-2 gap-16 items-center">
+            {/* Left: Info */}
+            <div>
+              <p className="anim-fade-up text-blue-400 text-xs tracking-[0.25em] uppercase font-medium mb-4">01 / Button</p>
+              <h2 className="anim-fade-up-d1 text-white text-5xl font-bold tracking-tight mb-6" style={{ letterSpacing: '-0.02em' }}>
+                Button<br />스타일링
+              </h2>
+              <p className="anim-fade-up-d2 text-gray-400 text-base leading-relaxed mb-8">
+                <code className="text-blue-300">&lt;button&gt;</code> 태그에 CSS를 적용하여<br />
+                다양한 스타일의 버튼을 만듭니다.
+              </p>
+
+              <div className="anim-fade-up-d3 code-block text-xs">
+                <span className="comment">/* 핵심 CSS 속성 */</span><br />
+                <span className="prop">border-radius</span>: <span className="val">8px</span>;<br />
+                <span className="prop">transition</span>: <span className="val">transform 0.2s</span>;<br />
+                <span className="prop">transform</span>: <span className="val">translateY(-2px)</span>;<br />
+                <span className="prop">box-shadow</span>: <span className="val">0 4px 12px rgba(0,0,0,0.15)</span>;
+              </div>
+            </div>
+
+            {/* Right: Demo */}
+            <div className="anim-scale-in">
+              <div className="demo-container flex flex-col items-center gap-8 py-12">
+                <p className="text-gray-500 text-xs tracking-widest uppercase mb-2">Live Demo</p>
+                <div className="flex gap-4">
+                  <button className="demo-btn demo-btn-primary">확인</button>
+                  <button className="demo-btn demo-btn-danger">삭제</button>
+                  <button className="demo-btn demo-btn-outline">취소</button>
+                </div>
+                <p className="text-gray-500 text-xs mt-4">hover 해보세요 ↑</p>
+
+                <div className="w-full border-t border-gray-700 pt-6 mt-2">
+                  <p className="text-gray-500 text-xs mb-3">사용된 태그</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {['<button>', '.btn-primary', '.btn-danger', '.btn-outline', ':hover'].map(tag => (
+                      <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium"
+                            style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Slide 3: Card
+    function CardSlide() {
+      return (
+        <div className="w-full h-full flex items-center justify-center"
+             style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' }}>
+          <div className="max-w-5xl w-full px-12 grid grid-cols-2 gap-16 items-center">
+            {/* Left: Info */}
+            <div>
+              <p className="anim-fade-up text-purple-400 text-xs tracking-[0.25em] uppercase font-medium mb-4">02 / Card</p>
+              <h2 className="anim-fade-up-d1 text-white text-5xl font-bold tracking-tight mb-6" style={{ letterSpacing: '-0.02em' }}>
+                Card<br />컴포넌트
+              </h2>
+              <p className="anim-fade-up-d2 text-gray-400 text-base leading-relaxed mb-8">
+                <code className="text-purple-300">&lt;div&gt;</code>를 시맨틱하게 구조화하여<br />
+                정보를 카드 형태로 보여줍니다.
+              </p>
+
+              <div className="anim-fade-up-d3 code-block text-xs">
+                <span className="comment">/* Card 핵심 스타일 */</span><br />
+                <span className="prop">border-radius</span>: <span className="val">16px</span>;<br />
+                <span className="prop">overflow</span>: <span className="val">hidden</span>;<br />
+                <span className="prop">box-shadow</span>: <span className="val">0 8px 24px rgba(0,0,0,0.3)</span>;<br />
+                <span className="prop">background</span>: <span className="val">linear-gradient(135deg, ...)</span>;
+              </div>
+            </div>
+
+            {/* Right: Demo */}
+            <div className="anim-scale-in flex justify-center gap-5">
+              <div className="demo-card">
+                <div style={{ height: '100px', background: 'linear-gradient(135deg, #667eea, #764ba2)' }} />
+                <div className="p-4">
+                  <h4 className="font-bold text-sm text-gray-800 mb-1">React 기초</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">컴포넌트 기반 UI 라이브러리의 핵심 개념</p>
+                  <span className="inline-block mt-2 px-3 py-0.5 text-xs font-semibold rounded-full"
+                        style={{ background: '#e0f2fe', color: '#0284c7' }}>프론트엔드</span>
+                </div>
+              </div>
+              <div className="demo-card">
+                <div style={{ height: '100px', background: 'linear-gradient(135deg, #f093fb, #f5576c)' }} />
+                <div className="p-4">
+                  <h4 className="font-bold text-sm text-gray-800 mb-1">CSS 애니메이션</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">트랜지션과 키프레임으로 생동감 있는 UI</p>
+                  <span className="inline-block mt-2 px-3 py-0.5 text-xs font-semibold rounded-full"
+                        style={{ background: '#fce7f3', color: '#db2777' }}>디자인</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Slide 4: Form
+    function FormSlide() {
+      const [focused, setFocused] = useState('');
+      return (
+        <div className="w-full h-full flex items-center justify-center"
+             style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <div className="max-w-5xl w-full px-12 grid grid-cols-2 gap-16 items-center">
+            {/* Left: Info */}
+            <div>
+              <p className="anim-fade-up text-purple-200 text-xs tracking-[0.25em] uppercase font-medium mb-4">03 / Form</p>
+              <h2 className="anim-fade-up-d1 text-white text-5xl font-bold tracking-tight mb-6" style={{ letterSpacing: '-0.02em' }}>
+                Form<br />스타일링
+              </h2>
+              <p className="anim-fade-up-d2 text-purple-100 text-base leading-relaxed mb-8" style={{ opacity: 0.8 }}>
+                <code className="text-white">&lt;form&gt;</code>, <code className="text-white">&lt;input&gt;</code>, <code className="text-white">&lt;label&gt;</code> 태그를 조합하여<br />
+                사용자 입력을 받는 폼을 만듭니다.
+              </p>
+
+              <div className="anim-fade-up-d3 code-block text-xs">
+                <span className="comment">/* Focus 효과 */</span><br />
+                <span className="tag">input</span>:<span className="attr">focus</span> {'{'}<br />
+                &nbsp;&nbsp;<span className="prop">border-color</span>: <span className="val">#667eea</span>;<br />
+                {'}'}<br /><br />
+                <span className="comment">/* 사용된 태그 */</span><br />
+                <span className="tag">&lt;form&gt;</span> <span className="tag">&lt;input&gt;</span> <span className="tag">&lt;label&gt;</span><br />
+                <span className="tag">&lt;button type="submit"&gt;</span>
+              </div>
+            </div>
+
+            {/* Right: Demo */}
+            <div className="anim-scale-in">
+              <div className="bg-white rounded-2xl p-8 shadow-2xl" style={{ width: '320px' }}>
+                <h3 className="text-center text-gray-800 font-bold text-lg mb-5">로그인</h3>
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">이메일</label>
+                  <input className="demo-input" placeholder="example@email.com"
+                         onFocus={() => setFocused('email')} onBlur={() => setFocused('')} />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">비밀번호</label>
+                  <input className="demo-input" type="password" placeholder="비밀번호를 입력하세요"
+                         onFocus={() => setFocused('pw')} onBlur={() => setFocused('')} />
+                </div>
+                <button className="w-full py-2.5 rounded-lg text-white font-semibold text-sm cursor-pointer border-none"
+                        style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', transition: 'opacity 0.2s' }}
+                        onMouseEnter={e => e.target.style.opacity='0.9'}
+                        onMouseLeave={e => e.target.style.opacity='1'}>
+                  로그인
+                </button>
+                <p className="text-center text-xs text-gray-400 mt-3">
+                  계정이 없으신가요? <span className="text-indigo-500 font-semibold cursor-pointer">회원가입</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Slide 5: Navbar
+    function NavbarSlide() {
+      return (
+        <div className="w-full h-full flex items-center justify-center"
+             style={{ background: '#f8fafc' }}>
+          <div className="max-w-5xl w-full px-12 grid grid-cols-2 gap-16 items-center">
+            {/* Left: Info */}
+            <div>
+              <p className="anim-fade-up text-blue-500 text-xs tracking-[0.25em] uppercase font-medium mb-4">04 / Navigation</p>
+              <h2 className="anim-fade-up-d1 text-gray-900 text-5xl font-bold tracking-tight mb-6" style={{ letterSpacing: '-0.02em' }}>
+                Navigation<br />Bar
+              </h2>
+              <p className="anim-fade-up-d2 text-gray-500 text-base leading-relaxed mb-8">
+                <code className="text-blue-600">&lt;nav&gt;</code>, <code className="text-blue-600">&lt;ul&gt;</code>, <code className="text-blue-600">&lt;li&gt;</code>, <code className="text-blue-600">&lt;a&gt;</code> 태그로<br />
+                시맨틱한 네비게이션을 구성합니다.
+              </p>
+
+              <div className="anim-fade-up-d3 code-block text-xs">
+                <span className="comment">/* Sticky 네비게이션 */</span><br />
+                <span className="prop">position</span>: <span className="val">sticky</span>;<br />
+                <span className="prop">display</span>: <span className="val">flex</span>;<br /><br />
+                <span className="comment">/* Active 표시선 */</span><br />
+                <span className="tag">a.active</span>::<span className="attr">after</span> {'{'}<br />
+                &nbsp;&nbsp;<span className="prop">height</span>: <span className="val">3px</span>;<br />
+                &nbsp;&nbsp;<span className="prop">background</span>: <span className="val">#3b82f6</span>;<br />
+                {'}'}
+              </div>
+            </div>
+
+            {/* Right: Demo */}
+            <div className="anim-scale-in">
+              <div className="demo-container-light">
+                <p className="text-gray-400 text-xs tracking-widest uppercase mb-4 text-center">Live Demo</p>
+                <div className="demo-nav mb-6">
+                  <span className="font-extrabold text-blue-500 text-sm">MyApp</span>
+                  <div className="flex gap-5">
+                    <a href="#" className="demo-nav-link active" onClick={e => e.preventDefault()}>홈</a>
+                    <a href="#" className="demo-nav-link" onClick={e => e.preventDefault()}>소개</a>
+                    <a href="#" className="demo-nav-link" onClick={e => e.preventDefault()}>서비스</a>
+                    <a href="#" className="demo-nav-link" onClick={e => e.preventDefault()}>문의</a>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <p className="text-gray-400 text-xs mb-3">사용된 태그</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {['<nav>', '<ul>', '<li>', '<a>', 'position: sticky', '::after'].map(tag => (
+                      <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium"
+                            style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Slide 6: Grid Gallery
+    function GridSlide() {
+      const colors = [
+        { gradient: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', name: '선셋' },
+        { gradient: 'linear-gradient(135deg, #48dbfb, #0abde3)', name: '오션' },
+        { gradient: 'linear-gradient(135deg, #feca57, #ff9f43)', name: '골든' },
+        { gradient: 'linear-gradient(135deg, #5f27cd, #341f97)', name: '퍼플' },
+        { gradient: 'linear-gradient(135deg, #1dd1a1, #10ac84)', name: '민트' },
+        { gradient: 'linear-gradient(135deg, #f368e0, #e056a0)', name: '로즈' },
+      ];
+
+      return (
+        <div className="w-full h-full flex items-center justify-center"
+             style={{ background: '#0f172a' }}>
+          <div className="max-w-5xl w-full px-12 grid grid-cols-2 gap-16 items-center">
+            {/* Left: Info */}
+            <div>
+              <p className="anim-fade-up text-emerald-400 text-xs tracking-[0.25em] uppercase font-medium mb-4">05 / Grid Gallery</p>
+              <h2 className="anim-fade-up-d1 text-white text-5xl font-bold tracking-tight mb-6" style={{ letterSpacing: '-0.02em' }}>
+                Grid<br />Gallery
+              </h2>
+              <p className="anim-fade-up-d2 text-gray-400 text-base leading-relaxed mb-8">
+                CSS Grid로 반응형 갤러리를 만듭니다.<br />
+                <code className="text-emerald-300">hover</code> 시 오버레이가 나타납니다.
+              </p>
+
+              <div className="anim-fade-up-d3 code-block text-xs">
+                <span className="comment">/* CSS Grid 레이아웃 */</span><br />
+                <span className="prop">display</span>: <span className="val">grid</span>;<br />
+                <span className="prop">grid-template-columns</span>:<br />
+                &nbsp;&nbsp;<span className="val">repeat(auto-fill, minmax(250px, 1fr))</span>;<br />
+                <span className="prop">aspect-ratio</span>: <span className="val">1</span>;<br /><br />
+                <span className="comment">/* Hover 오버레이 */</span><br />
+                <span className="prop">opacity</span>: <span className="val">0 → 1</span>;<br />
+                <span className="prop">transition</span>: <span className="val">opacity 0.3s</span>;
+              </div>
+            </div>
+
+            {/* Right: Demo */}
+            <div className="anim-scale-in">
+              <div className="demo-container">
+                <p className="text-gray-500 text-xs tracking-widest uppercase mb-4 text-center">Live Demo</p>
+                <div className="demo-grid">
+                  {colors.map(c => (
+                    <div key={c.name} className="demo-grid-item">
+                      <div className="color-fill" style={{ background: c.gradient }} />
+                      <div className="hover-overlay">
+                        <span className="font-semibold">{c.name}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-gray-700 pt-4 mt-5">
+                  <p className="text-gray-500 text-xs mb-3">사용된 속성</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {['display: grid', 'grid-template-columns', 'aspect-ratio', 'opacity', ':hover'].map(tag => (
+                      <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium"
+                            style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399' }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Slide 7: Summary
+    function SummarySlide() {
+      const items = [
+        { num: '01', title: 'Button', desc: 'transition, transform, box-shadow', color: '#3b82f6' },
+        { num: '02', title: 'Card', desc: 'border-radius, overflow, linear-gradient', color: '#8b5cf6' },
+        { num: '03', title: 'Form', desc: ':focus, border transitions', color: '#a855f7' },
+        { num: '04', title: 'Navbar', desc: 'sticky, flexbox, ::after', color: '#ec4899' },
+        { num: '05', title: 'Grid Gallery', desc: 'CSS Grid, aspect-ratio, opacity', color: '#10b981' },
+      ];
+
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center relative"
+             style={{ background: 'linear-gradient(180deg, #000 0%, #1d1d1f 100%)' }}>
+          <div className="absolute top-1/3 left-1/3 w-96 h-96 rounded-full opacity-5"
+               style={{ background: 'radial-gradient(circle, #3b82f6, transparent)', filter: 'blur(100px)' }} />
+          <div className="absolute bottom-1/3 right-1/3 w-96 h-96 rounded-full opacity-5"
+               style={{ background: 'radial-gradient(circle, #ec4899, transparent)', filter: 'blur(100px)' }} />
+
+          <div className="relative z-10 text-center px-8">
+            <p className="anim-fade-up text-gray-500 text-xs tracking-[0.3em] uppercase font-medium mb-6">Summary</p>
+            <h2 className="anim-fade-up-d1 text-white text-5xl font-bold tracking-tight mb-12" style={{ letterSpacing: '-0.03em' }}>
+              오늘 배운 것들
+            </h2>
+
+            <div className="anim-fade-up-d2 flex flex-col gap-4 mb-16 max-w-md mx-auto">
+              {items.map((item, i) => (
+                <div key={item.num} className="flex items-center gap-4 text-left"
+                     style={{ animation: `fadeUp 0.6s ${0.3 + i * 0.1}s ease both` }}>
+                  <span className="text-xs font-bold w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: item.color + '20', color: item.color }}>
+                    {item.num}
+                  </span>
+                  <div>
+                    <span className="text-white font-semibold text-sm">{item.title}</span>
+                    <span className="text-gray-500 text-xs ml-2">{item.desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ animation: 'fadeUp 0.8s 0.9s ease both' }}>
+              <h3 className="text-white text-4xl font-bold tracking-tight mb-3">감사합니다</h3>
+              <p className="text-gray-600 text-sm">HTML &amp; CSS 핵심 태그 가이드</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ─────────────── Main App ─────────────── */
+
+    const SLIDES = [TitleSlide, ButtonSlide, CardSlide, FormSlide, NavbarSlide, GridSlide, SummarySlide];
+
+    function App() {
+      const [current, setCurrent] = useState(0);
+      const [slideState, setSlideState] = useState('slide-active');
+      const [slideKey, setSlideKey] = useState(0);
+      const total = SLIDES.length;
+
+      const goTo = useCallback((index) => {
+        if (index < 0 || index >= total || index === current) return;
+        setSlideState('slide-exit');
+        setTimeout(() => {
+          setCurrent(index);
+          setSlideKey(k => k + 1);
+          setSlideState('slide-enter');
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setSlideState('slide-active');
+            });
+          });
+        }, 350);
+      }, [current, total]);
+
+      const next = useCallback(() => goTo(current + 1), [current, goTo]);
+      const prev = useCallback(() => goTo(current - 1), [current, goTo]);
+
+      useEffect(() => {
+        const handler = (e) => {
+          if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+          else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+          else if (e.key === 'Escape') { e.preventDefault(); goTo(0); }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+      }, [next, prev, goTo]);
+
+      const SlideComponent = SLIDES[current];
+
+      return (
+        <div className="w-full h-screen relative overflow-hidden" style={{ background: '#000' }}>
+          {/* Current Slide */}
+          <div key={slideKey} className={`slide-container ${slideState}`}>
+            <SlideComponent />
+          </div>
+
+          {/* Navigation Arrows */}
+          {current > 0 && (
+            <button className="nav-arrow nav-arrow-left" onClick={prev} aria-label="Previous slide">
+              &#8592;
+            </button>
+          )}
+          {current < total - 1 && (
+            <button className="nav-arrow nav-arrow-right" onClick={next} aria-label="Next slide">
+              &#8594;
+            </button>
+          )}
+
+          {/* Bottom Bar: Dots + Counter */}
+          <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center pb-6 z-50 pointer-events-none">
+            <div className="flex items-center gap-6 pointer-events-auto">
+              {/* Slide counter */}
+              <span className="text-xs font-medium tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                {current + 1} / {total}
+              </span>
+
+              {/* Dots */}
+              <div className="flex gap-2">
+                {SLIDES.map((_, i) => (
+                  <button key={i} onClick={() => goTo(i)}
+                    className="rounded-full transition-all duration-300 border-none cursor-pointer"
+                    style={{
+                      width: i === current ? '24px' : '8px',
+                      height: '8px',
+                      background: i === current ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)',
+                    }}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Progress bar at very top */}
+          <div className="fixed top-0 left-0 h-0.5 z-50 transition-all duration-500 ease-out"
+               style={{
+                 width: `${((current + 1) / total) * 100}%`,
+                 background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)',
+               }} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

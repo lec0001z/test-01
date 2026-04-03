@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>짤 생성기</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 20px 10px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      background: linear-gradient(135deg, #e94560, #f5a623);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: #888;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 20px auto;
+      padding: 0 20px 40px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    /* 캔버스 영역 */
+    .canvas-area {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .canvas-wrapper {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+      position: relative;
+    }
+
+    .canvas-wrapper.dragover {
+      outline: 3px dashed #e94560;
+    }
+
+    canvas {
+      max-width: 100%;
+      border-radius: 8px;
+      cursor: crosshair;
+    }
+
+    .placeholder {
+      text-align: center;
+      color: #555;
+      pointer-events: none;
+    }
+
+    .placeholder .icon {
+      font-size: 4rem;
+      margin-bottom: 12px;
+    }
+
+    /* 컨트롤 패널 */
+    .controls {
+      width: 320px;
+      flex-shrink: 0;
+      background: #16213e;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .controls h3 {
+      font-size: 1rem;
+      color: #e94560;
+      border-bottom: 1px solid #2a2a4a;
+      padding-bottom: 8px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 0.85rem; color: #aaa; }
+    .field input, .field select, .field textarea {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #2a2a4a;
+      background: #0f3460;
+      color: #eee;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: #e94560;
+    }
+    .field textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row .field { flex: 1; }
+
+    .color-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .color-input-wrap input[type="color"] {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 0;
+      background: none;
+    }
+
+    /* 텍스트 목록 */
+    .text-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .text-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f3460;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    .text-item.active {
+      border-color: #e94560;
+    }
+
+    .text-item span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+
+    .text-item button {
+      background: none;
+      border: none;
+      color: #e94560;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 4px;
+    }
+
+    /* 버튼 */
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #e94560, #c23152);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #0f3460;
+      color: #ccc;
+    }
+    .btn-download {
+      background: linear-gradient(135deg, #0cebeb, #20e3b2);
+      color: #111;
+      width: 100%;
+      font-size: 1.05rem;
+      padding: 12px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-row .btn { flex: 1; }
+
+    /* 반응형 */
+    @media (max-width: 800px) {
+      .app {
+        flex-direction: column;
+      }
+      .controls {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>짤 생성기</h1>
+  <p>이미지를 업로드하고 텍스트를 올려서 나만의 짤을 만들어보세요!</p>
+</header>
+
+<div class="app">
+  <!-- 캔버스 -->
+  <div class="canvas-area">
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <div class="placeholder" id="placeholder">
+        <div class="icon">🖼️</div>
+        <p>이미지를 드래그하거나 아래 버튼으로 업로드하세요</p>
+      </div>
+      <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()" style="flex:1;">📁 이미지 업로드</button>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+    </div>
+  </div>
+
+  <!-- 컨트롤 -->
+  <div class="controls">
+    <h3>텍스트 추가</h3>
+
+    <div class="field">
+      <label>텍스트 내용</label>
+      <textarea id="textInput" placeholder="여기에 텍스트를 입력하세요"></textarea>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>글꼴 크기</label>
+        <input type="number" id="fontSize" value="40" min="10" max="200">
+      </div>
+      <div class="field">
+        <label>글꼴</label>
+        <select id="fontFamily">
+          <option value="'Malgun Gothic', sans-serif">맑은 고딕</option>
+          <option value="'Gulim', sans-serif">굴림</option>
+          <option value="'Dotum', sans-serif">돋움</option>
+          <option value="Impact, sans-serif">Impact</option>
+          <option value="Arial Black, sans-serif">Arial Black</option>
+          <option value="Comic Sans MS, cursive">Comic Sans</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>글자 색상</label>
+        <div class="color-input-wrap">
+          <input type="color" id="textColor" value="#ffffff">
+          <span style="font-size:0.85rem;">#ffffff</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>외곽선 색상</label>
+        <div class="color-input-wrap">
+          <input type="color" id="strokeColor" value="#000000">
+          <span style="font-size:0.85rem;">#000000</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>외곽선 두께</label>
+        <input type="number" id="strokeWidth" value="3" min="0" max="20">
+      </div>
+      <div class="field">
+        <label>정렬</label>
+        <select id="textAlign">
+          <option value="center">가운데</option>
+          <option value="left">왼쪽</option>
+          <option value="right">오른쪽</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="addText()">+ 텍스트 추가</button>
+
+    <h3>텍스트 목록</h3>
+    <div class="text-list" id="textList">
+      <p style="color:#555; font-size:0.85rem;">텍스트를 추가하면 여기에 표시됩니다</p>
+    </div>
+
+    <p style="font-size:0.8rem; color:#666; line-height:1.5;">
+      💡 캔버스에서 텍스트를 드래그하여 위치를 조정할 수 있습니다.
+    </p>
+
+    <button class="btn btn-download" onclick="download()">💾 짤 다운로드 (PNG)</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const wrapper = document.getElementById('canvasWrapper');
+const placeholder = document.getElementById('placeholder');
+const fileInput = document.getElementById('fileInput');
+
+let bgImage = null;
+let texts = [];
+let selectedIdx = -1;
+let dragging = false;
+let dragOffX = 0, dragOffY = 0;
+
+// 색상 인풋 라벨 업데이트
+document.getElementById('textColor').addEventListener('input', function() {
+  this.parentElement.querySelector('span').textContent = this.value;
+});
+document.getElementById('strokeColor').addEventListener('input', function() {
+  this.parentElement.querySelector('span').textContent = this.value;
+});
+
+// 이미지 로드
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) loadImage(file);
+});
+
+// 드래그 앤 드롭
+wrapper.addEventListener('dragover', e => {
+  e.preventDefault();
+  wrapper.classList.add('dragover');
+});
+wrapper.addEventListener('dragleave', () => wrapper.classList.remove('dragover'));
+wrapper.addEventListener('drop', e => {
+  e.preventDefault();
+  wrapper.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadImage(file);
+});
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      bgImage = img;
+
+      // 캔버스 크기를 이미지에 맞춤 (최대 800px)
+      const maxW = 800;
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+
+      canvas.width = w;
+      canvas.height = h;
+      canvas.style.display = 'block';
+      placeholder.style.display = 'none';
+      render();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addText() {
+  const content = document.getElementById('textInput').value.trim();
+  if (!content) return;
+  if (!bgImage) { alert('먼저 이미지를 업로드하세요!'); return; }
+
+  texts.push({
+    content,
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    fontSize: parseInt(document.getElementById('fontSize').value) || 40,
+    fontFamily: document.getElementById('fontFamily').value,
+    color: document.getElementById('textColor').value,
+    strokeColor: document.getElementById('strokeColor').value,
+    strokeWidth: parseInt(document.getElementById('strokeWidth').value) || 0,
+    align: document.getElementById('textAlign').value,
+  });
+
+  document.getElementById('textInput').value = '';
+  selectedIdx = texts.length - 1;
+  updateTextList();
+  render();
+}
+
+function updateTextList() {
+  const list = document.getElementById('textList');
+  if (texts.length === 0) {
+    list.innerHTML = '<p style="color:#555; font-size:0.85rem;">텍스트를 추가하면 여기에 표시됩니다</p>';
+    return;
+  }
+
+  list.innerHTML = texts.map((t, i) => `
+    <div class="text-item ${i === selectedIdx ? 'active' : ''}" onclick="selectText(${i})">
+      <span>${escapeHTML(t.content)}</span>
+      <button onclick="event.stopPropagation(); removeText(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function selectText(idx) {
+  selectedIdx = idx;
+  updateTextList();
+  render();
+}
+
+function removeText(idx) {
+  texts.splice(idx, 1);
+  if (selectedIdx >= texts.length) selectedIdx = texts.length - 1;
+  updateTextList();
+  render();
+}
+
+function render() {
+  if (!bgImage) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+  texts.forEach((t, i) => {
+    ctx.save();
+    ctx.font = `bold ${t.fontSize}px ${t.fontFamily}`;
+    ctx.textAlign = t.align;
+    ctx.textBaseline = 'middle';
+
+    const lines = t.content.split('\n');
+    const lineHeight = t.fontSize * 1.2;
+    const startY = t.y - (lines.length - 1) * lineHeight / 2;
+
+    lines.forEach((line, li) => {
+      const ly = startY + li * lineHeight;
+
+      if (t.strokeWidth > 0) {
+        ctx.strokeStyle = t.strokeColor;
+        ctx.lineWidth = t.strokeWidth * 2;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(line, t.x, ly);
+      }
+
+      ctx.fillStyle = t.color;
+      ctx.fillText(line, t.x, ly);
+    });
+
+    // 선택된 텍스트 표시
+    if (i === selectedIdx) {
+      const maxWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+      const totalH = lines.length * lineHeight;
+      let boxX = t.x - maxWidth / 2 - 6;
+      if (t.align === 'left') boxX = t.x - 6;
+      if (t.align === 'right') boxX = t.x - maxWidth - 6;
+
+      ctx.strokeStyle = 'rgba(233, 69, 96, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.strokeRect(boxX, startY - lineHeight / 2 - 4, maxWidth + 12, totalH + 8);
+      ctx.setLineDash([]);
+    }
+
+    ctx.restore();
+  });
+}
+
+// 마우스 드래그로 텍스트 이동
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+function hitTest(pos) {
+  for (let i = texts.length - 1; i >= 0; i--) {
+    const t = texts[i];
+    ctx.font = `bold ${t.fontSize}px ${t.fontFamily}`;
+    const lines = t.content.split('\n');
+    const lineHeight = t.fontSize * 1.2;
+    const maxWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const totalH = lines.length * lineHeight;
+    const startY = t.y - (lines.length - 1) * lineHeight / 2;
+
+    let boxX = t.x - maxWidth / 2;
+    if (t.align === 'left') boxX = t.x;
+    if (t.align === 'right') boxX = t.x - maxWidth;
+
+    if (pos.x >= boxX - 10 && pos.x <= boxX + maxWidth + 10 &&
+        pos.y >= startY - lineHeight / 2 - 10 && pos.y <= startY + totalH - lineHeight / 2 + 10) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const pos = getCanvasPos(e);
+  const hit = hitTest(pos);
+  if (hit >= 0) {
+    selectedIdx = hit;
+    dragging = true;
+    dragOffX = pos.x - texts[hit].x;
+    dragOffY = pos.y - texts[hit].y;
+    updateTextList();
+    render();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!dragging || selectedIdx < 0) return;
+  const pos = getCanvasPos(e);
+  texts[selectedIdx].x = pos.x - dragOffX;
+  texts[selectedIdx].y = pos.y - dragOffY;
+  render();
+});
+
+canvas.addEventListener('mouseup', () => { dragging = false; });
+canvas.addEventListener('mouseleave', () => { dragging = false; });
+
+// 터치 지원
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const pos = getCanvasPos(touch);
+  const hit = hitTest(pos);
+  if (hit >= 0) {
+    selectedIdx = hit;
+    dragging = true;
+    dragOffX = pos.x - texts[hit].x;
+    dragOffY = pos.y - texts[hit].y;
+    updateTextList();
+    render();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!dragging || selectedIdx < 0) return;
+  const touch = e.touches[0];
+  const pos = getCanvasPos(touch);
+  texts[selectedIdx].x = pos.x - dragOffX;
+  texts[selectedIdx].y = pos.y - dragOffY;
+  render();
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { dragging = false; });
+
+// 다운로드
+function download() {
+  if (!bgImage) { alert('먼저 이미지를 업로드하세요!'); return; }
+
+  // 선택 해제 후 렌더링하여 선택 박스 없이 저장
+  const prevSelected = selectedIdx;
+  selectedIdx = -1;
+  render();
+
+  const link = document.createElement('a');
+  link.download = '짤_' + Date.now() + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+
+  selectedIdx = prevSelected;
+  render();
+}
+</script>
+
+</body>
+</html>

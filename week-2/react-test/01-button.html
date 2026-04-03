@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>버튼 스타일링</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f0f4f8;
+      font-family: 'Segoe UI', sans-serif;
+      gap: 20px;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid #3b82f6;
+      color: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <button class="btn btn-primary">확인</button>
+  <button class="btn btn-danger">삭제</button>
+  <button class="btn btn-outline">취소</button>
+</body>
+</html>
