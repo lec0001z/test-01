@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마음쉼 - 심리 상담 채팅</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+    body {
+      font-family: 'Noto Sans KR', 'Gowun Dodum', sans-serif;
+      background: linear-gradient(135deg, #fdf4ff 0%, #eff6ff 50%, #ecfdf5 100%);
+      min-height: 100vh;
+    }
+    /* Chat scrollbar */
+    .chat-scroll::-webkit-scrollbar { width: 6px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 3px; }
+    .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+
+    /* Typing dots animation */
+    @keyframes bounce-dot {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+    .typing-dot { animation: bounce-dot 1.2s infinite ease-in-out; }
+    .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+    /* Fade in message */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .msg-enter { animation: fade-up 0.35s ease-out both; }
+
+    /* Soft pulse for live dot */
+    @keyframes soft-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); }
+      50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+    }
+    .live-dot { animation: soft-pulse 2s infinite; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    // ========================================
+    // React Hooks
+    // ========================================
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+
+    function Button({ variant = 'primary', size = 'md', disabled, onClick, className = '', children, type = 'button', 'aria-label': ariaLabel }) {
+      const base = 'inline-flex items-center justify-center font-medium rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+      const variants = {
+        primary: 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover:from-violet-600 hover:to-indigo-600 focus:ring-violet-400 shadow-md hover:shadow-lg',
+        secondary: 'bg-white text-violet-600 border border-violet-200 hover:bg-violet-50 focus:ring-violet-300',
+        ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus:ring-slate-300',
+        danger: 'bg-rose-500 text-white hover:bg-rose-600 focus:ring-rose-400',
+        soft: 'bg-violet-100 text-violet-700 hover:bg-violet-200 focus:ring-violet-300',
+      };
+      const sizes = {
+        sm: 'px-3 py-1.5 text-xs',
+        md: 'px-4 py-2 text-sm',
+        lg: 'px-6 py-3 text-base',
+        icon: 'w-10 h-10',
+      };
+      return (
+        <button
+          type={type}
+          disabled={disabled}
+          onClick={onClick}
+          aria-label={ariaLabel}
+          className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    function Card({ className = '', children }) {
+      return (
+        <div className={`bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-white/60 ${className}`}>
+          {children}
+        </div>
+      );
+    }
+
+    function Badge({ color = 'violet', children, className = '' }) {
+      const colors = {
+        violet: 'bg-violet-100 text-violet-700',
+        emerald: 'bg-emerald-100 text-emerald-700',
+        sky: 'bg-sky-100 text-sky-700',
+        rose: 'bg-rose-100 text-rose-700',
+        amber: 'bg-amber-100 text-amber-700',
+      };
+      return (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[color]} ${className}`}>
+          {children}
+        </span>
+      );
+    }
+
+    function Avatar({ src, alt, size = 'md', online = false }) {
+      const sizes = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-12 h-12', xl: 'w-16 h-16' };
+      return (
+        <div className="relative inline-block">
+          <div className={`${sizes[size]} rounded-full bg-gradient-to-br from-violet-400 to-pink-400 flex items-center justify-center text-white font-semibold overflow-hidden ring-2 ring-white shadow-md`}>
+            {src ? <img src={src} alt={alt} className="w-full h-full object-cover" /> : <span>{alt?.[0] || '?'}</span>}
+          </div>
+          {online && (
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full ring-2 ring-white live-dot" aria-label="온라인"></span>
+          )}
+        </div>
+      );
+    }
+
+    function IconButton({ onClick, children, 'aria-label': ariaLabel, className = '' }) {
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={ariaLabel}
+          className={`w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:bg-violet-50 hover:text-violet-600 transition focus:outline-none focus:ring-2 focus:ring-violet-300 ${className}`}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    // ========================================
+    // 💬 Chat Domain Components
+    // ========================================
+
+    function MessageBubble({ message }) {
+      const isUser = message.role === 'user';
+      const time = new Date(message.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+      if (message.role === 'system') {
+        return (
+          <div className="msg-enter flex justify-center my-4">
+            <span className="px-4 py-1.5 bg-white/60 backdrop-blur text-xs text-slate-500 rounded-full border border-slate-200">
+              {message.text}
+            </span>
+          </div>
+        );
+      }
+
+      return (
+        <div className={`msg-enter flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+          {!isUser && (
+            <div className="mr-2 flex-shrink-0">
+              <Avatar alt="상담사" size="sm" />
+            </div>
+          )}
+          <div className={`flex flex-col max-w-[78%] sm:max-w-[70%] ${isUser ? 'items-end' : 'items-start'}`}>
+            {!isUser && (
+              <span className="text-xs text-slate-500 mb-1 ml-1">달빛 상담사</span>
+            )}
+            <div
+              className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap
+                ${isUser
+                  ? 'bg-gradient-to-br from-violet-500 to-indigo-500 text-white rounded-br-sm'
+                  : 'bg-white text-slate-700 rounded-bl-sm border border-slate-100'}`}
+            >
+              {message.text}
+            </div>
+            <span className={`text-[10px] text-slate-400 mt-1 ${isUser ? 'mr-1' : 'ml-1'}`}>{time}</span>
+          </div>
+        </div>
+      );
+    }
+
+    function TypingIndicator() {
+      return (
+        <div className="msg-enter flex items-center mb-4">
+          <div className="mr-2"><Avatar alt="상담사" size="sm" /></div>
+          <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+            <div className="flex items-center space-x-1">
+              <span className="typing-dot w-2 h-2 bg-violet-400 rounded-full inline-block"></span>
+              <span className="typing-dot w-2 h-2 bg-violet-400 rounded-full inline-block"></span>
+              <span className="typing-dot w-2 h-2 bg-violet-400 rounded-full inline-block"></span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function MoodSelector({ mood, setMood }) {
+      const moods = [
+        { key: 'great', emoji: '😊', label: '좋아요' },
+        { key: 'okay', emoji: '🙂', label: '괜찮아요' },
+        { key: 'tired', emoji: '😮‍💨', label: '지쳤어요' },
+        { key: 'sad', emoji: '😢', label: '슬퍼요' },
+        { key: 'anxious', emoji: '😰', label: '불안해요' },
+        { key: 'angry', emoji: '😤', label: '화나요' },
+      ];
+      return (
+        <div>
+          <p className="text-xs font-medium text-slate-500 mb-2">오늘의 기분</p>
+          <div className="grid grid-cols-3 gap-2">
+            {moods.map(m => (
+              <button
+                key={m.key}
+                onClick={() => setMood(m.key)}
+                aria-pressed={mood === m.key}
+                className={`flex flex-col items-center py-2 rounded-xl border transition
+                  ${mood === m.key
+                    ? 'bg-violet-100 border-violet-300 ring-2 ring-violet-200'
+                    : 'bg-white/60 border-slate-200 hover:bg-white'}`}
+              >
+                <span className="text-xl">{m.emoji}</span>
+                <span className="text-[10px] text-slate-600 mt-0.5">{m.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function QuickReplies({ replies, onPick, disabled }) {
+      return (
+        <div className="flex flex-wrap gap-2 px-4 pb-3">
+          {replies.map((r, i) => (
+            <button
+              key={i}
+              onClick={() => onPick(r)}
+              disabled={disabled}
+              className="px-3 py-1.5 text-xs bg-white border border-violet-200 text-violet-600 rounded-full hover:bg-violet-50 transition shadow-sm disabled:opacity-50"
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    function SessionItem({ title, snippet, active, onClick }) {
+      return (
+        <button
+          onClick={onClick}
+          className={`w-full text-left p-3 rounded-2xl transition
+            ${active ? 'bg-violet-100/80 border border-violet-200' : 'hover:bg-white/70 border border-transparent'}`}
+        >
+          <p className="text-sm font-medium text-slate-700 truncate">{title}</p>
+          <p className="text-xs text-slate-500 truncate mt-0.5">{snippet}</p>
+        </button>
+      );
+    }
+
+    // ========================================
+    // 🧭 Sidebar
+    // ========================================
+
+    function Sidebar({ mood, setMood, sessions, activeSession, setActiveSession, onNewChat }) {
+      return (
+        <aside className="hidden lg:flex lg:w-80 xl:w-96 flex-col p-5 space-y-5">
+          {/* Brand */}
+          <div className="flex items-center space-x-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-400 to-pink-400 flex items-center justify-center shadow-lg">
+              <span className="text-xl">🌙</span>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">마음쉼</h1>
+              <p className="text-xs text-slate-500">당신의 따뜻한 대화 친구</p>
+            </div>
+          </div>
+
+          {/* Mood */}
+          <Card className="p-4">
+            <MoodSelector mood={mood} setMood={setMood} />
+          </Card>
+
+          {/* New chat */}
+          <Button variant="primary" size="md" onClick={onNewChat} className="w-full">
+            <span className="mr-1">✨</span> 새로운 대화 시작
+          </Button>
+
+          {/* Session list */}
+          <Card className="p-3 flex-1 overflow-y-auto chat-scroll">
+            <p className="text-xs font-semibold text-slate-500 px-2 pt-1 pb-2">최근 대화</p>
+            <div className="space-y-1">
+              {sessions.map(s => (
+                <SessionItem
+                  key={s.id}
+                  title={s.title}
+                  snippet={s.snippet}
+                  active={s.id === activeSession}
+                  onClick={() => setActiveSession(s.id)}
+                />
+              ))}
+            </div>
+          </Card>
+
+          {/* Helpline */}
+          <Card className="p-4 bg-rose-50/80 border-rose-100">
+            <div className="flex items-start space-x-2">
+              <span className="text-lg">💗</span>
+              <div>
+                <p className="text-xs font-semibold text-rose-700">긴급 상담이 필요하다면</p>
+                <p className="text-xs text-rose-600 mt-1">자살예방상담전화 <span className="font-bold">1393</span></p>
+                <p className="text-xs text-rose-600">정신건강상담전화 <span className="font-bold">1577-0199</span></p>
+              </div>
+            </div>
+          </Card>
+        </aside>
+      );
+    }
+
+    // ========================================
+    // 📄 Chat Page
+    // ========================================
+
+    function ChatPage() {
+      const [messages, setMessages] = useState([
+        { id: 1, role: 'system', text: '2026년 4월 11일 · 상담이 시작되었어요', time: Date.now() - 60000 },
+        { id: 2, role: 'assistant', text: '안녕하세요, 만나서 반가워요 🌸\n오늘 하루는 어떻게 보내셨나요? 편하게 이야기해 주세요. 제가 조용히 들을게요.', time: Date.now() - 50000 },
+      ]);
+      const [input, setInput] = useState('');
+      const [isTyping, setIsTyping] = useState(false);
+      const [mood, setMood] = useState('okay');
+      const [activeSession, setActiveSession] = useState(1);
+      const scrollRef = useRef(null);
+      const textareaRef = useRef(null);
+
+      const sessions = [
+        { id: 1, title: '오늘의 마음 정리', snippet: '오늘 하루는 어떻게 보내셨나요?' },
+        { id: 2, title: '업무 스트레스에 대해', snippet: '요즘 회사에서 너무 지쳐요...' },
+        { id: 3, title: '잠들기 전 불안감', snippet: '밤마다 생각이 많아져요' },
+        { id: 4, title: '관계에 대한 고민', snippet: '친구와의 거리가 느껴져요' },
+      ];
+
+      const quickReplies = useMemo(() => ([
+        '요즘 너무 지쳐요',
+        '잠이 잘 안 와요',
+        '사람들과의 관계가 힘들어요',
+        '그냥 이야기하고 싶어요',
+      ]), []);
+
+      // Auto scroll to bottom
+      useEffect(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, [messages, isTyping]);
+
+      // Auto-resize textarea
+      useEffect(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+      }, [input]);
+
+      const sendMessage = async (text) => {
+        const trimmed = text.trim();
+        if (!trimmed) return;
+        const userMsg = { id: Date.now(), role: 'user', text: trimmed, time: Date.now() };
+        const nextMessages = [...messages, userMsg];
+        setMessages(nextMessages);
+        setInput('');
+        setIsTyping(true);
+
+        try {
+          // 서버로 보낼 대화 히스토리 (system 메시지 제외, user/assistant만)
+          const history = nextMessages
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .map(m => ({ role: m.role, text: m.text }));
+
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: history, mood }),
+          });
+
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload.success) {
+            throw new Error(payload.message || `요청 실패 (${res.status})`);
+          }
+
+          const reply = payload.data?.reply || '…';
+          const botMsg = { id: Date.now() + 1, role: 'assistant', text: reply, time: Date.now() };
+          setMessages(prev => [...prev, botMsg]);
+        } catch (err) {
+          const errMsg = {
+            id: Date.now() + 2,
+            role: 'assistant',
+            text: `죄송해요, 지금은 연결이 잠시 불안정해요 🌧️\n(${err.message})\n잠시 후 다시 이야기해 주실 수 있을까요?`,
+            time: Date.now(),
+          };
+          setMessages(prev => [...prev, errMsg]);
+        } finally {
+          setIsTyping(false);
+        }
+      };
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage(input);
+        }
+      };
+
+      const handleNewChat = () => {
+        setMessages([
+          { id: Date.now(), role: 'system', text: '새로운 대화가 시작되었어요', time: Date.now() },
+          { id: Date.now() + 1, role: 'assistant', text: '다시 찾아주셔서 기뻐요 💜\n오늘은 어떤 이야기를 나누고 싶으세요?', time: Date.now() },
+        ]);
+      };
+
+      return (
+        <div className="min-h-screen flex">
+          {/* Sidebar */}
+          <Sidebar
+            mood={mood}
+            setMood={setMood}
+            sessions={sessions}
+            activeSession={activeSession}
+            setActiveSession={setActiveSession}
+            onNewChat={handleNewChat}
+          />
+
+          {/* Main chat area */}
+          <main className="flex-1 flex flex-col p-2 sm:p-5 min-h-screen">
+            <Card className="flex-1 flex flex-col overflow-hidden">
+              {/* Header */}
+              <header className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white/70 backdrop-blur">
+                <div className="flex items-center space-x-3">
+                  <Avatar alt="달빛 상담사" size="lg" online />
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h2 className="text-base font-bold text-slate-800">달빛 상담사</h2>
+                      <Badge color="emerald">온라인</Badge>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">따뜻하게 들어드릴게요 · 비밀은 안전하게 보호돼요</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <IconButton aria-label="음성 통화">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  </IconButton>
+                  <IconButton aria-label="설정">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  </IconButton>
+                </div>
+              </header>
+
+              {/* Messages */}
+              <div
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto chat-scroll px-4 sm:px-6 py-6 bg-gradient-to-b from-violet-50/40 via-white/10 to-sky-50/40"
+              >
+                {messages.map(m => <MessageBubble key={m.id} message={m} />)}
+                {isTyping && <TypingIndicator />}
+              </div>
+
+              {/* Quick replies */}
+              {messages.length <= 3 && !isTyping && (
+                <QuickReplies replies={quickReplies} onPick={sendMessage} disabled={isTyping} />
+              )}
+
+              {/* Input area */}
+              <form
+                onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
+                className="border-t border-slate-100 bg-white/80 backdrop-blur px-3 sm:px-4 py-3"
+              >
+                <div className="flex items-end space-x-2">
+                  <IconButton aria-label="파일 첨부">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                  </IconButton>
+                  <div className="flex-1 relative">
+                    <textarea
+                      ref={textareaRef}
+                      rows="1"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="마음을 편하게 이야기해 보세요..."
+                      aria-label="메시지 입력"
+                      className="w-full resize-none px-4 py-3 pr-12 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition placeholder:text-slate-400"
+                    />
+                    <button
+                      type="button"
+                      aria-label="이모지"
+                      className="absolute right-3 bottom-3 text-slate-400 hover:text-violet-500 transition"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                    </button>
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="icon"
+                    disabled={!input.trim() || isTyping}
+                    aria-label="전송"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                  </Button>
+                </div>
+                <p className="text-[10px] text-slate-400 text-center mt-2">
+                  Enter로 전송 · Shift+Enter로 줄바꿈 · 대화는 안전하게 보호됩니다 🔒
+                </p>
+              </form>
+            </Card>
+          </main>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🚀 App
+    // ========================================
+
+    function App() {
+      return <ChatPage />;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

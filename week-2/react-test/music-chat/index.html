@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>뮤직 튜터 - AI 음악 지식 채팅</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up { animation: fadeInUp 0.35s ease-out; }
+
+    @keyframes bounce-dot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .typing-dot { animation: bounce-dot 1.2s infinite ease-in-out; }
+    .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+    .chat-scroll::-webkit-scrollbar { width: 8px; }
+    .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.3);
+      border-radius: 4px;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.5); }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+    }
+  </style>
+</head>
+<body class="gradient-bg min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    // ========================================
+    // React Hooks
+    // ========================================
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+
+    function Button({ variant = 'primary', size = 'md', disabled, onClick, className = '', children, type = 'button', ariaLabel }) {
+      const base = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed';
+      const variants = {
+        primary: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/30 focus:ring-purple-400',
+        secondary: 'bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm border border-white/10 focus:ring-white/40',
+        ghost: 'bg-transparent text-white/80 hover:text-white hover:bg-white/10 focus:ring-white/30',
+        danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-400',
+      };
+      const sizes = {
+        sm: 'px-3 py-1.5 text-sm',
+        md: 'px-4 py-2 text-sm',
+        lg: 'px-6 py-3 text-base',
+      };
+      return (
+        <button
+          type={type}
+          onClick={onClick}
+          disabled={disabled}
+          aria-label={ariaLabel}
+          className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    function Card({ className = '', children }) {
+      return (
+        <div className={`bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl ${className}`}>
+          {children}
+        </div>
+      );
+    }
+
+    function Badge({ color = 'purple', children, className = '' }) {
+      const colors = {
+        purple: 'bg-purple-500/20 text-purple-200 border-purple-400/30',
+        pink: 'bg-pink-500/20 text-pink-200 border-pink-400/30',
+        blue: 'bg-blue-500/20 text-blue-200 border-blue-400/30',
+        green: 'bg-green-500/20 text-green-200 border-green-400/30',
+      };
+      return (
+        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full border ${colors[color]} ${className}`}>
+          {children}
+        </span>
+      );
+    }
+
+    // ========================================
+    // 🧠 Knowledge Base (오프라인 음악 지식 AI)
+    // ========================================
+
+    const MUSIC_KNOWLEDGE = [
+      {
+        keywords: ['코드', 'chord', '화음', '화성'],
+        answer: '🎹 **코드(Chord)**는 두 개 이상의 음이 동시에 울리는 화음이에요.\n\n- **메이저 코드**: 밝고 경쾌한 느낌 (예: C, G, D)\n- **마이너 코드**: 어둡고 슬픈 느낌 (예: Am, Em, Dm)\n- **세븐스 코드**: 재즈와 블루스에서 자주 쓰여요 (예: G7, Cmaj7)\n\n가장 기본이 되는 삼화음은 **근음 + 3도 + 5도**로 구성돼요!'
+      },
+      {
+        keywords: ['스케일', 'scale', '음계'],
+        answer: '🎼 **스케일(Scale)**은 음을 일정한 규칙으로 나열한 음계예요.\n\n- **메이저 스케일**: 도-레-미-파-솔-라-시-도 (전전반전전전반)\n- **마이너 스케일**: 어두운 느낌의 음계 (전반전전반전전)\n- **펜타토닉**: 5음 음계, 록/블루스에서 필수!\n- **블루스 스케일**: 블루 노트가 추가된 스케일\n\n스케일을 알면 작곡과 즉흥연주가 훨씬 쉬워져요 ✨'
+      },
+      {
+        keywords: ['장르', 'genre', '종류'],
+        answer: '🎧 대표적인 음악 **장르**를 소개할게요!\n\n- **클래식**: 바로크, 고전파, 낭만파, 현대음악\n- **재즈**: 스윙, 비밥, 퓨전\n- **록**: 하드록, 펑크록, 메탈, 인디록\n- **힙합**: 붐뱁, 트랩, 컨셔스 랩\n- **일렉트로닉**: 하우스, 테크노, EDM, 앰비언트\n- **K-POP**: 한국 대중음악의 글로벌 장르\n\n궁금한 장르가 있으면 말해주세요!'
+      },
+      {
+        keywords: ['박자', 'beat', 'bpm', '템포', 'tempo'],
+        answer: '⏱️ **박자(Beat)와 템포(Tempo)**에 대해 알려드릴게요!\n\n- **BPM**: Beats Per Minute, 1분당 박자 수\n- **느린 템포**: 60~80 BPM (발라드)\n- **보통 템포**: 100~120 BPM (팝)\n- **빠른 템포**: 140+ BPM (댄스, EDM)\n\n**박자표**는 4/4, 3/4, 6/8 등으로 표시하며, 윗숫자는 한 마디의 박 수, 아랫숫자는 박의 길이를 의미해요 🎵'
+      },
+      {
+        keywords: ['악기', 'instrument'],
+        answer: '🎸 **악기**는 크게 다섯 가지로 나뉘어요!\n\n1. **현악기**: 바이올린, 첼로, 기타, 하프\n2. **관악기**: 플루트, 트럼펫, 색소폰, 클라리넷\n3. **타악기**: 드럼, 팀파니, 마림바\n4. **건반악기**: 피아노, 오르간, 신디사이저\n5. **전자악기**: 신스, 샘플러, 드럼머신\n\n어떤 악기에 대해 더 알고 싶으세요?'
+      },
+      {
+        keywords: ['작곡', 'compose', '만들기'],
+        answer: '✍️ **작곡 입문 가이드**\n\n1. **키(Key) 정하기** — C장조가 가장 쉬워요\n2. **코드 진행 만들기** — I-V-vi-IV (C-G-Am-F)는 황금 진행!\n3. **멜로디 쓰기** — 코드의 구성음 위주로 시작\n4. **리듬 정하기** — 장르에 맞는 BPM 선택\n5. **구조 짜기** — 인트로-벌스-코러스-브릿지-아웃트로\n\n작은 모티프 하나로 시작해 확장해가는 게 핵심이에요 💡'
+      },
+      {
+        keywords: ['재즈', 'jazz'],
+        answer: '🎷 **재즈(Jazz)**는 20세기 초 미국 뉴올리언스에서 시작된 음악이에요.\n\n- **특징**: 즉흥연주(Improvisation), 스윙 리듬, 블루 노트\n- **하위 장르**: 딕시랜드, 스윙, 비밥, 쿨재즈, 퓨전\n- **대표 아티스트**: 루이 암스트롱, 마일스 데이비스, 존 콜트레인, 빌 에반스\n\n재즈는 "귀로 듣고 마음으로 대화하는" 음악이라고 불려요 💙'
+      },
+      {
+        keywords: ['클래식', 'classical'],
+        answer: '🎻 **클래식 음악**의 시대 구분\n\n- **바로크 (1600-1750)**: 바흐, 헨델, 비발디\n- **고전파 (1750-1820)**: 모차르트, 하이든, 초기 베토벤\n- **낭만파 (1820-1900)**: 쇼팽, 차이콥스키, 브람스\n- **현대 (1900-)**: 드뷔시, 스트라빈스키, 쇤베르크\n\n첫 입문으로는 **파헬벨의 캐논**, **쇼팽의 야상곡**, **드뷔시의 달빛**을 추천해요 🌙'
+      },
+      {
+        keywords: ['음정', 'interval'],
+        answer: '📏 **음정(Interval)**은 두 음 사이의 거리예요.\n\n- **완전 1도/8도**: 같은 음 / 옥타브\n- **장2도**: 도-레 (전음)\n- **장3도**: 도-미 (밝은 느낌)\n- **단3도**: 도-미♭ (어두운 느낌)\n- **완전5도**: 도-솔 (안정감)\n\n**장3도 + 단3도 = 메이저 코드**, **단3도 + 장3도 = 마이너 코드**! 🎹'
+      },
+      {
+        keywords: ['mixing', '믹싱', '마스터링', 'mastering'],
+        answer: '🎚️ **믹싱 vs 마스터링**\n\n- **믹싱(Mixing)**: 개별 트랙들의 볼륨, 팬, EQ, 리버브 등을 조정해 하나의 곡으로 다듬는 과정\n- **마스터링(Mastering)**: 완성된 믹스를 최종적으로 음압/음색을 다듬어 배포용으로 만드는 과정\n\n**핵심 포인트**:\n1. 믹싱 전 트랙 정리 필수\n2. 저역대 정리가 80%\n3. 레퍼런스 곡과 비교하며 작업하기 🎧'
+      },
+      {
+        keywords: ['기타', 'guitar'],
+        answer: '🎸 **기타(Guitar)** 입문 가이드\n\n- **어쿠스틱 기타**: 통기타, 핑거스타일/스트럼에 적합\n- **일렉트릭 기타**: 앰프와 이펙터로 다양한 사운드\n- **클래식 기타**: 나일론 줄, 클래식/보사노바\n\n**초보 필수 코드**: C, G, D, Am, Em\n**연습 순서**: 코드 잡기 → 코드 체인지 → 스트럼 패턴 → 노래 연주\n\n매일 30분씩 꾸준히 연습하는 게 가장 중요해요!'
+      },
+      {
+        keywords: ['피아노', 'piano', '건반'],
+        answer: '🎹 **피아노(Piano)** 입문 가이드\n\n- **88건반**: 풀사이즈 피아노의 표준\n- **흰 건반**: 도레미파솔라시 (자연음)\n- **검은 건반**: 반음 (샵/플랫)\n\n**초보 연습 순서**:\n1. 올바른 손 자세와 핑거링\n2. 한 손씩 멜로디 연습\n3. 왼손 코드 반주 추가\n4. 양손 합치기\n\n**추천 입문곡**: 학교 종, 나비야, 반짝반짝 작은별 ⭐'
+      },
+      {
+        keywords: ['드럼', 'drum', '리듬'],
+        answer: '🥁 **드럼(Drum)** 기초 지식\n\n**기본 구성**:\n- **킥(Bass Drum)**: 발로 연주, 저음 담당\n- **스네어(Snare)**: 백비트, 드럼의 핵심\n- **하이햇(Hi-Hat)**: 리듬 유지\n- **탐(Tom)**: 필인에 사용\n- **크래시/라이드**: 심벌즈\n\n**기본 8비트 패턴**:\n하이햇: x-x-x-x-x-x-x-x\n스네어: ----x-------x---\n킥:    x-------x-------\n\n이 패턴만 익혀도 대부분의 팝송 연주가 가능해요!'
+      },
+      {
+        keywords: ['음악이론', '이론', 'theory', '기초'],
+        answer: '📚 **음악 이론 기초**\n\n1. **음이름**: 도레미파솔라시 = C D E F G A B\n2. **반음과 전음**: 피아노 바로 옆 건반 = 반음, 한 칸 건너 = 전음\n3. **조표**: 샵(#)은 반음 올림, 플랫(♭)은 반음 내림\n4. **음자리표**: 높은음자리표(트레블), 낮은음자리표(베이스)\n5. **음표 길이**: 온음표(4박) > 2분음표(2박) > 4분음표(1박) > 8분음표(0.5박)\n\n이 기초만 알면 악보 읽기가 가능해져요!'
+      },
+    ];
+
+    function findAnswer(question) {
+      const q = question.toLowerCase();
+      const match = MUSIC_KNOWLEDGE.find(item =>
+        item.keywords.some(k => q.includes(k.toLowerCase()))
+      );
+      if (match) return match.answer;
+      return '🤔 아직 그 주제에 대한 지식은 학습 중이에요!\n\n대신 이런 주제들을 물어보실 수 있어요:\n\n- **코드**와 **스케일**\n- 다양한 **장르**와 **악기**\n- **박자/BPM**, **음정**\n- **작곡** 입문\n- **재즈**, **클래식**\n- **기타**, **피아노**, **드럼**\n- **믹싱/마스터링**\n- **음악이론** 기초\n\n음악의 어떤 부분이 궁금하신가요? 🎵';
+    }
+
+    function renderMessage(text) {
+      const lines = text.split('\n');
+      return lines.map((line, i) => {
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <div key={i} className={line.trim() === '' ? 'h-2' : ''}>
+            {parts.map((part, j) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={j} className="font-semibold text-pink-200">{part.slice(2, -2)}</strong>;
+              }
+              return <span key={j}>{part}</span>;
+            })}
+          </div>
+        );
+      });
+    }
+
+    // ========================================
+    // 🧩 Chat Components
+    // ========================================
+
+    function MessageBubble({ message }) {
+      const isUser = message.role === 'user';
+      return (
+        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
+          <div className={`flex gap-2 max-w-[85%] md:max-w-[75%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div
+              className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-lg shadow-lg ${
+                isUser
+                  ? 'bg-gradient-to-br from-blue-400 to-cyan-400'
+                  : 'bg-gradient-to-br from-purple-400 to-pink-400'
+              }`}
+              aria-hidden="true"
+            >
+              {isUser ? '🙋' : '🎵'}
+            </div>
+            <div
+              className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-lg ${
+                isUser
+                  ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-tr-sm'
+                  : 'bg-white/10 backdrop-blur-sm text-white/95 border border-white/10 rounded-tl-sm'
+              }`}
+            >
+              <div className="whitespace-pre-wrap break-words">
+                {renderMessage(message.content)}
+              </div>
+              <div className={`text-[10px] mt-2 ${isUser ? 'text-blue-100' : 'text-white/40'}`}>
+                {message.time}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function TypingIndicator() {
+      return (
+        <div className="flex justify-start animate-fade-in-up">
+          <div className="flex gap-2 max-w-[75%]">
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-lg shadow-lg">
+              🎵
+            </div>
+            <div className="px-5 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 rounded-tl-sm shadow-lg">
+              <div className="flex gap-1.5 items-center">
+                <span className="typing-dot w-2 h-2 rounded-full bg-purple-300"></span>
+                <span className="typing-dot w-2 h-2 rounded-full bg-purple-300"></span>
+                <span className="typing-dot w-2 h-2 rounded-full bg-purple-300"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function SuggestionChip({ text, onClick }) {
+      return (
+        <button
+          onClick={() => onClick(text)}
+          className="px-3 py-1.5 text-xs rounded-full bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 hover:border-purple-400/50 transition-all duration-200 whitespace-nowrap"
+        >
+          {text}
+        </button>
+      );
+    }
+
+    function Header({ onReset }) {
+      return (
+        <header className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/5 backdrop-blur-md rounded-t-2xl">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl shadow-lg shadow-purple-500/40">
+                🎼
+              </div>
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-slate-900"></span>
+            </div>
+            <div>
+              <h1 className="text-white font-bold text-lg leading-tight">뮤직 튜터</h1>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-green-300">● 온라인</span>
+                <Badge color="purple" className="hidden sm:inline-flex">AI 음악 친구</Badge>
+              </div>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onReset} ariaLabel="대화 초기화">
+            🔄 새 대화
+          </Button>
+        </header>
+      );
+    }
+
+    // ========================================
+    // 📄 Chat Page
+    // ========================================
+
+    const INITIAL_MESSAGE = {
+      role: 'assistant',
+      content: '안녕하세요! 🎵 저는 음악 지식을 쉽고 재미있게 알려드리는 **뮤직 튜터**예요.\n\n코드, 스케일, 장르, 악기, 작곡 등 무엇이든 물어보세요!\n아래 추천 질문을 눌러보셔도 좋아요 👇',
+      time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    const SUGGESTIONS = [
+      '코드가 뭐예요?',
+      '스케일 알려줘',
+      '작곡 어떻게 시작해?',
+      '재즈에 대해',
+      '클래식 입문',
+      'BPM이 뭐야?',
+      '기타 배우고 싶어',
+      '피아노 입문',
+      '믹싱과 마스터링',
+      '음악이론 기초',
+    ];
+
+    function ChatPage() {
+      const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+      const [input, setInput] = useState('');
+      const [isTyping, setIsTyping] = useState(false);
+      const scrollRef = useRef(null);
+      const inputRef = useRef(null);
+
+      useEffect(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, [messages, isTyping]);
+
+      useEffect(() => {
+        inputRef.current?.focus();
+      }, []);
+
+      const sendMessage = useCallback((text) => {
+        const content = text.trim();
+        if (!content || isTyping) return;
+
+        const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        const userMsg = { role: 'user', content, time: now };
+        setMessages(prev => [...prev, userMsg]);
+        setInput('');
+        setIsTyping(true);
+
+        setTimeout(() => {
+          const reply = {
+            role: 'assistant',
+            content: findAnswer(content),
+            time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+          };
+          setMessages(prev => [...prev, reply]);
+          setIsTyping(false);
+        }, 800 + Math.random() * 600);
+      }, [isTyping]);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        sendMessage(input);
+      };
+
+      const handleReset = () => {
+        if (window.confirm('대화를 새로 시작할까요?')) {
+          setMessages([{ ...INITIAL_MESSAGE, time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) }]);
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex items-center justify-center p-2 sm:p-4 md:p-6">
+          <Card className="w-full max-w-3xl h-[92vh] sm:h-[88vh] flex flex-col overflow-hidden">
+            <Header onReset={handleReset} />
+
+            {/* 메시지 영역 */}
+            <div
+              ref={scrollRef}
+              className="chat-scroll flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-4"
+              aria-live="polite"
+            >
+              {messages.map((msg, idx) => (
+                <MessageBubble key={idx} message={msg} />
+              ))}
+              {isTyping && <TypingIndicator />}
+            </div>
+
+            {/* 추천 질문 */}
+            {messages.length <= 3 && (
+              <div className="px-4 sm:px-6 pb-3">
+                <div className="text-[11px] text-white/50 mb-2 font-medium">💡 추천 질문</div>
+                <div className="flex gap-2 overflow-x-auto chat-scroll pb-1">
+                  {SUGGESTIONS.map((s) => (
+                    <SuggestionChip key={s} text={s} onClick={sendMessage} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 입력 영역 */}
+            <form
+              onSubmit={handleSubmit}
+              className="px-4 sm:px-6 py-4 border-t border-white/10 bg-white/5 backdrop-blur-md"
+            >
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="음악에 대해 무엇이든 물어보세요..."
+                    disabled={isTyping}
+                    className="w-full px-4 py-3 pr-10 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent disabled:opacity-50"
+                    aria-label="메시지 입력"
+                  />
+                  {input && (
+                    <button
+                      type="button"
+                      onClick={() => setInput('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 text-sm"
+                      aria-label="입력 지우기"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  disabled={!input.trim() || isTyping}
+                  ariaLabel="메시지 전송"
+                >
+                  <span className="hidden sm:inline mr-1">전송</span>
+                  <span>➤</span>
+                </Button>
+              </div>
+              <div className="mt-2 text-[10px] text-white/40 text-center">
+                🎵 뮤직 튜터는 오프라인 지식 베이스를 사용합니다 · Enter로 전송
+              </div>
+            </form>
+          </Card>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🚀 App
+    // ========================================
+
+    function App() {
+      return <ChatPage />;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

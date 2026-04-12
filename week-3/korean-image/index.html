@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한국풍 이미지 생성기 — 墨畵 AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#1a1a2e',
+            parchment: '#f5f0e8',
+            gold: '#c9a96e',
+            'gold-dark': '#a8863e',
+            vermillion: '#c73e3a',
+            celadon: '#6b9e8a',
+            indigo: '#3d5a80',
+          },
+          fontFamily: {
+            serif: ['Noto Serif KR', 'serif'],
+            sans: ['Noto Sans KR', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #f5f0e8;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(107,158,138,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(201,169,110,0.1) 0%, transparent 50%);
+    }
+    .ink-wash {
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 50%, #1a1a2e 100%);
+    }
+    .stamp {
+      border: 2px solid #c73e3a;
+      color: #c73e3a;
+      font-family: 'Noto Serif KR', serif;
+      writing-mode: vertical-rl;
+      padding: 6px 4px;
+      font-size: 12px;
+      letter-spacing: 4px;
+      line-height: 1;
+    }
+    @keyframes brushStroke {
+      0% { width: 0; opacity: 0; }
+      50% { opacity: 1; }
+      100% { width: 100%; opacity: 1; }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes inkDrop {
+      0% { transform: scale(0); opacity: 0; }
+      50% { opacity: 0.6; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    .animate-ink-drop {
+      animation: inkDrop 0.8s ease-out forwards;
+    }
+    .shimmer-loading {
+      background: linear-gradient(90deg, #e8e0d0 25%, #f5f0e8 50%, #e8e0d0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    .scroll-pattern {
+      border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M0 20 Q10 10 20 20 T40 20' fill='none' stroke='%23c9a96e' stroke-width='1' opacity='0.3'/%3E%3C/svg%3E") 20 round;
+    }
+    textarea:focus, input:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(201,169,110,0.4);
+    }
+    .gallery-item:hover .overlay {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans text-ink">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useCallback, useRef, useEffect, createContext, useContext } = React;
+
+    // ========================================
+    // 🔑 OpenAI API Configuration
+    // ========================================
+
+    const getApiKey = () => localStorage.getItem("openai_api_key") || "";
+
+    const STYLE_PROMPTS = {
+      ink: 'traditional Korean ink wash painting (sumukhwa/수묵화) style, black ink on hanji paper, elegant brushstrokes, misty atmosphere, monochrome with subtle ink gradations',
+      minhwa: 'traditional Korean folk painting (minhwa/민화) style, vivid and bold colors, decorative patterns, symbolic imagery, flat perspective, cheerful and auspicious mood',
+      dancheong: 'Korean dancheong (단청) architectural painting style, intricate geometric and floral patterns, rich colors of red, green, blue, gold, and white, ornamental temple decoration',
+      modern: 'modern Korean art style blending traditional Korean aesthetics with contemporary design, hanbok-inspired elements, Korean calligraphy touches, elegant and refined',
+    };
+
+    async function generateImageWithDALLE(userPrompt, styleId, apiKey) {
+      const stylePrefix = STYLE_PROMPTS[styleId] || STYLE_PROMPTS.ink;
+      const fullPrompt = `${stylePrefix}. Subject: ${userPrompt}`;
+
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: fullPrompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API 오류 (${response.status})`);
+      }
+
+      const data = await response.json();
+      return data.data[0].url;
+    }
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+
+    function Button({ variant = 'primary', size = 'md', disabled = false, onClick, children, className = '' }) {
+      const base = 'font-serif rounded-sm transition-all duration-300 inline-flex items-center justify-center gap-2 cursor-pointer';
+      const variants = {
+        primary: 'bg-ink text-parchment hover:bg-ink/90 active:scale-[0.98] disabled:opacity-40',
+        secondary: 'border-2 border-gold text-gold-dark hover:bg-gold/10 active:scale-[0.98] disabled:opacity-40',
+        ghost: 'text-ink/60 hover:text-ink hover:bg-ink/5 disabled:opacity-40',
+        danger: 'bg-vermillion text-white hover:bg-vermillion/90 disabled:opacity-40',
+      };
+      const sizes = {
+        sm: 'px-3 py-1.5 text-sm',
+        md: 'px-5 py-2.5 text-base',
+        lg: 'px-8 py-3.5 text-lg',
+      };
+      return (
+        <button
+          className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
+          disabled={disabled}
+          onClick={onClick}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    function Card({ children, className = '', hover = false }) {
+      return (
+        <div className={`bg-white/70 backdrop-blur-sm border border-gold/20 rounded-sm shadow-sm ${hover ? 'hover:shadow-md hover:border-gold/40 transition-all duration-300' : ''} ${className}`}>
+          {children}
+        </div>
+      );
+    }
+
+    function Badge({ children, variant = 'default', className = '' }) {
+      const variants = {
+        default: 'bg-ink/10 text-ink/70',
+        gold: 'bg-gold/20 text-gold-dark',
+        celadon: 'bg-celadon/20 text-celadon',
+        vermillion: 'bg-vermillion/10 text-vermillion',
+      };
+      return (
+        <span className={`px-2.5 py-1 text-xs font-medium rounded-sm ${variants[variant]} ${className}`}>
+          {children}
+        </span>
+      );
+    }
+
+    function Modal({ isOpen, onClose, title, children }) {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+          <div className="absolute inset-0 bg-ink/60 backdrop-blur-sm" />
+          <div
+            className="relative bg-parchment border border-gold/30 rounded-sm shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-auto animate-fade-in-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-5 border-b border-gold/20">
+              <h2 className="font-serif text-xl font-bold">{title}</h2>
+              <button onClick={onClose} className="text-ink/40 hover:text-ink text-2xl leading-none cursor-pointer">&times;</button>
+            </div>
+            <div className="p-5">{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🧩 Common / Layout Components
+    // ========================================
+
+    function Header() {
+      return (
+        <header className="border-b border-gold/20 bg-white/40 backdrop-blur-md sticky top-0 z-40">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="stamp">畵</div>
+              <div>
+                <h1 className="font-serif text-2xl font-black tracking-tight">墨畵 AI</h1>
+                <p className="text-xs text-ink/50 font-light tracking-widest">한국풍 이미지 생성기</p>
+              </div>
+            </div>
+            <nav className="hidden sm:flex items-center gap-1">
+              <Badge variant="gold">v1.0</Badge>
+            </nav>
+          </div>
+        </header>
+      );
+    }
+
+    function Footer() {
+      return (
+        <footer className="border-t border-gold/15 mt-20 py-8 text-center text-ink/30 text-sm">
+          <p className="font-serif">墨畵 AI &mdash; 전통과 기술의 만남</p>
+        </footer>
+      );
+    }
+
+    // ========================================
+    // 🖼️ Prompt Suggestion Chips
+    // ========================================
+
+    const PROMPT_SUGGESTIONS = [
+      { label: '산수화', prompt: '안개 낀 산속 소나무 숲과 작은 정자, 먹으로 그린 전통 산수화 스타일' },
+      { label: '한옥', prompt: '기와지붕 한옥 마을의 가을 풍경, 단풍이 물든 나무와 돌담길' },
+      { label: '달빛', prompt: '보름달 아래 고요한 연못, 연꽃이 피어있는 한국 전통 정원' },
+      { label: '사계절', prompt: '벚꽃이 흩날리는 봄날 경복궁, 한복을 입은 여인이 걸어가는 모습' },
+      { label: '민화', prompt: '호랑이와 까치가 있는 전통 민화 스타일, 밝고 화려한 색감' },
+      { label: '도자기', prompt: '청자 매병 위에 그려진 구름과 학, 고려시대 상감청자 문양' },
+      { label: '서예', prompt: '힘찬 붓놀림으로 쓴 한글 서예 작품, 먹물이 번진 화선지' },
+      { label: '풍속화', prompt: '김홍도 풍속화 스타일의 씨름하는 장면, 구경꾼들이 둘러싸고 있음' },
+    ];
+
+    function PromptChips({ onSelect }) {
+      return (
+        <div className="flex flex-wrap gap-2">
+          {PROMPT_SUGGESTIONS.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => onSelect(s.prompt)}
+              className="px-3 py-1.5 text-sm bg-white/60 border border-gold/25 rounded-sm text-ink/70 hover:bg-gold/10 hover:border-gold/50 hover:text-gold-dark transition-all duration-200 font-serif cursor-pointer"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🖼️ Style Selector
+    // ========================================
+
+    const STYLES = [
+      { id: 'ink', name: '수묵화', desc: '먹과 붓으로 그린 전통 수묵', icon: '🖤' },
+      { id: 'minhwa', name: '민화', desc: '화려한 색감의 전통 민화', icon: '🎨' },
+      { id: 'dancheong', name: '단청', desc: '궁궐 건축의 화려한 단청 문양', icon: '🏯' },
+      { id: 'modern', name: '현대 한국풍', desc: '전통과 현대가 어우러진 스타일', icon: '✨' },
+    ];
+
+    function StyleSelector({ selected, onSelect }) {
+      return (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {STYLES.map(style => (
+            <button
+              key={style.id}
+              onClick={() => onSelect(style.id)}
+              className={`p-3 rounded-sm border-2 transition-all duration-200 text-left cursor-pointer ${
+                selected === style.id
+                  ? 'border-gold bg-gold/10 shadow-sm'
+                  : 'border-transparent bg-white/50 hover:border-gold/30'
+              }`}
+            >
+              <div className="text-2xl mb-1">{style.icon}</div>
+              <div className="font-serif font-bold text-sm">{style.name}</div>
+              <div className="text-xs text-ink/50 mt-0.5">{style.desc}</div>
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🖼️ Generated Image Card
+    // ========================================
+
+    function GeneratedImage({ image, onClick }) {
+      return (
+        <div
+          className="gallery-item group relative cursor-pointer animate-fade-in-up"
+          onClick={() => onClick(image)}
+        >
+          <Card hover className="overflow-hidden">
+            <div className="aspect-square bg-ink/5 relative overflow-hidden">
+              <img
+                src={image.url}
+                alt={image.prompt}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="overlay absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 flex items-end p-4">
+                <p className="text-parchment text-sm font-light line-clamp-2">{image.prompt}</p>
+              </div>
+            </div>
+            <div className="p-3">
+              <div className="flex items-center justify-between">
+                <Badge variant="gold">{image.styleName}</Badge>
+                <span className="text-xs text-ink/30">{image.time}</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 📄 Loading Skeleton
+    // ========================================
+
+    function LoadingSkeleton() {
+      return (
+        <Card className="overflow-hidden animate-ink-drop">
+          <div className="aspect-square shimmer-loading" />
+          <div className="p-4 space-y-3">
+            <div className="h-3 shimmer-loading rounded-sm w-3/4" />
+            <div className="h-3 shimmer-loading rounded-sm w-1/2" />
+          </div>
+        </Card>
+      );
+    }
+
+    // ========================================
+    // 📄 Image Detail Modal
+    // ========================================
+
+    function ImageDetail({ image, isOpen, onClose }) {
+      if (!image) return null;
+      return (
+        <Modal isOpen={isOpen} onClose={onClose} title="생성 결과">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1 min-w-0">
+              <img
+                src={image.url}
+                alt={image.prompt}
+                className="w-full rounded-sm border border-gold/20"
+              />
+            </div>
+            <div className="md:w-64 space-y-4">
+              <div>
+                <h4 className="text-xs text-ink/40 uppercase tracking-widest mb-1">프롬프트</h4>
+                <p className="text-sm leading-relaxed">{image.prompt}</p>
+              </div>
+              <div>
+                <h4 className="text-xs text-ink/40 uppercase tracking-widest mb-1">스타일</h4>
+                <Badge variant="gold">{image.styleName}</Badge>
+              </div>
+              <div>
+                <h4 className="text-xs text-ink/40 uppercase tracking-widest mb-1">생성 시간</h4>
+                <p className="text-sm text-ink/60">{image.time}</p>
+              </div>
+              <div className="pt-2 flex flex-col gap-2">
+                <Button variant="primary" size="sm" onClick={() => {
+                  const a = document.createElement('a');
+                  a.href = image.url;
+                  a.download = `묵화AI_${Date.now()}.png`;
+                  a.click();
+                }}>
+                  다운로드
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => {
+                  navigator.clipboard.writeText(image.prompt);
+                }}>
+                  프롬프트 복사
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      );
+    }
+
+    // ========================================
+    // 📄 Empty State
+    // ========================================
+
+    function EmptyGallery() {
+      return (
+        <div className="text-center py-20 px-4">
+          <div className="text-6xl mb-4 opacity-30">🏔️</div>
+          <h3 className="font-serif text-xl text-ink/40 mb-2">아직 생성된 작품이 없습니다</h3>
+          <p className="text-sm text-ink/30 max-w-md mx-auto">
+            위의 입력창에 원하는 이미지를 설명해 주세요.<br/>
+            전통 한국 미술 스타일로 아름다운 작품을 만들어 드립니다.
+          </p>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🚀 App Component
+    // ========================================
+
+    function App() {
+      const [apiKey, setApiKey] = useState(getApiKey());
+      const [prompt, setPrompt] = useState('');
+      const [style, setStyle] = useState('ink');
+      const [isGenerating, setIsGenerating] = useState(false);
+      const [images, setImages] = useState([]);
+      const [selectedImage, setSelectedImage] = useState(null);
+      const [modalOpen, setModalOpen] = useState(false);
+      const [error, setError] = useState(null);
+      const textareaRef = useRef(null);
+
+      const handleApiKeyChange = (e) => {
+        const key = e.target.value;
+        setApiKey(key);
+        localStorage.setItem("openai_api_key", key);
+      };
+
+      const handleGenerate = useCallback(async () => {
+        if (!apiKey.trim()) { setError('OpenAI API 키를 입력해주세요!'); return; }
+        if (!prompt.trim() || isGenerating) return;
+
+        setIsGenerating(true);
+        setError(null);
+        const currentStyle = STYLES.find(s => s.id === style);
+
+        try {
+          const imageUrl = await generateImageWithDALLE(prompt.trim(), style, apiKey);
+          const newImage = {
+            id: Date.now(),
+            url: imageUrl,
+            prompt: prompt.trim(),
+            style: style,
+            styleName: currentStyle.name,
+            time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+          };
+          setImages(prev => [newImage, ...prev]);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setIsGenerating(false);
+        }
+      }, [prompt, style, isGenerating]);
+
+      const handleKeyDown = useCallback((e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleGenerate();
+        }
+      }, [handleGenerate]);
+
+      const handleChipSelect = useCallback((chipPrompt) => {
+        setPrompt(chipPrompt);
+        textareaRef.current?.focus();
+      }, []);
+
+      const openDetail = useCallback((image) => {
+        setSelectedImage(image);
+        setModalOpen(true);
+      }, []);
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          <Header />
+
+          <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
+            {/* Hero Section */}
+            <section className="text-center mb-10">
+              <h2 className="font-serif text-3xl sm:text-4xl font-black mb-3 tracking-tight">
+                상상을 <span className="text-gold-dark">한국의 美</span>로
+              </h2>
+              <p className="text-ink/50 max-w-lg mx-auto text-sm leading-relaxed">
+                프롬프트를 입력하면 수묵화, 민화, 단청 등 다양한 한국 전통 미술 스타일로 이미지를 생성합니다.
+              </p>
+            </section>
+
+            {/* Input Section */}
+            <Card className="p-6 mb-8">
+              <div className="space-y-5">
+                {/* API Key */}
+                <div>
+                  <label className="block text-xs text-ink/40 uppercase tracking-widest mb-2 font-medium">🔑 OpenAI API Key</label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={handleApiKeyChange}
+                    placeholder="sk-proj-..."
+                    className="w-full px-4 py-2.5 rounded-lg border border-ink/10 bg-white/80 focus:border-gold-dark focus:outline-none transition-colors text-sm"
+                  />
+                </div>
+
+                {/* Style Selector */}
+                <div>
+                  <label className="block text-xs text-ink/40 uppercase tracking-widest mb-2 font-medium">화풍 선택</label>
+                  <StyleSelector selected={style} onSelect={setStyle} />
+                </div>
+
+                {/* Prompt Input */}
+                <div>
+                  <label className="block text-xs text-ink/40 uppercase tracking-widest mb-2 font-medium">프롬프트 입력</label>
+                  <div className="relative">
+                    <textarea
+                      ref={textareaRef}
+                      value={prompt}
+                      onChange={e => setPrompt(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="그리고 싶은 장면을 묘사해 주세요... (예: 안개 낀 산속 소나무 숲과 작은 정자)"
+                      rows={3}
+                      className="w-full px-4 py-3 bg-parchment/80 border border-gold/25 rounded-sm text-sm resize-none font-sans placeholder:text-ink/25 focus:border-gold/50 transition-colors"
+                    />
+                    <div className="absolute bottom-3 right-3 text-xs text-ink/20">
+                      Enter로 생성 · Shift+Enter로 줄바꿈
+                    </div>
+                  </div>
+                </div>
+
+                {/* Suggestion Chips */}
+                <div>
+                  <label className="block text-xs text-ink/40 uppercase tracking-widest mb-2 font-medium">추천 프롬프트</label>
+                  <PromptChips onSelect={handleChipSelect} />
+                </div>
+
+                {/* Generate Button */}
+                <div className="flex justify-end">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    disabled={!prompt.trim() || isGenerating}
+                    onClick={handleGenerate}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        생성 중...
+                      </>
+                    ) : (
+                      <>붓을 들다</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-vermillion/10 border border-vermillion/30 rounded-sm flex items-start gap-3 animate-fade-in-up">
+                <span className="text-vermillion text-lg">&#9888;</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-vermillion">이미지 생성에 실패했습니다</p>
+                  <p className="text-xs text-ink/50 mt-1">{error}</p>
+                </div>
+                <button onClick={() => setError(null)} className="text-ink/30 hover:text-ink cursor-pointer">&times;</button>
+              </div>
+            )}
+
+            {/* Gallery Section */}
+            <section>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-serif text-xl font-bold">
+                  작품 갤러리
+                  {images.length > 0 && (
+                    <span className="text-sm font-normal text-ink/30 ml-2">{images.length}점</span>
+                  )}
+                </h3>
+                {images.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setImages([])}>
+                    전체 삭제
+                  </Button>
+                )}
+              </div>
+
+              {isGenerating && images.length === 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <LoadingSkeleton />
+                </div>
+              )}
+
+              {!isGenerating && images.length === 0 && <EmptyGallery />}
+
+              {images.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {isGenerating && <LoadingSkeleton />}
+                  {images.map(image => (
+                    <GeneratedImage key={image.id} image={image} onClick={openDetail} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </main>
+
+          <Footer />
+
+          <ImageDetail
+            image={selectedImage}
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+          />
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🔥 Rendering
+    // ========================================
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

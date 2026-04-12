@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guitar Coach - 기타 학습 챗봇</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-up { animation: fadeInUp 0.3s ease-out; }
+    @keyframes typing {
+      0%, 60% { opacity: 0.3; }
+      30% { opacity: 1; }
+    }
+    .typing-dot:nth-child(1) { animation: typing 1.2s infinite 0s; }
+    .typing-dot:nth-child(2) { animation: typing 1.2s infinite 0.2s; }
+    .typing-dot:nth-child(3) { animation: typing 1.2s infinite 0.4s; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+    @keyframes strum {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-3deg); }
+      75% { transform: rotate(3deg); }
+    }
+    .strum { animation: strum 2s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+    // ========================================
+    // 📡 API 통신
+    // ========================================
+
+    const API_BASE_URL = window.location.origin;
+    const SESSION_ID = 'session_' + Math.random().toString(36).substring(2, 10);
+
+    async function fetchAIResponse(message) {
+      const res = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, sessionId: SESSION_ID })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || '응답 오류');
+      return data.data.reply;
+    }
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+
+    function Button({ variant = "primary", size = "md", disabled = false, onClick, children, className = "" }) {
+      const base = "rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95";
+      const variants = {
+        primary: "bg-amber-500 hover:bg-amber-400 text-gray-900 focus:ring-amber-500 shadow-md hover:shadow-lg",
+        secondary: "bg-gray-700 hover:bg-gray-600 text-gray-200 focus:ring-gray-500",
+        ghost: "bg-transparent hover:bg-white/10 text-gray-300 focus:ring-gray-500"
+      };
+      const sizes = {
+        sm: "px-3 py-1.5 text-sm",
+        md: "px-4 py-2.5 text-base",
+        lg: "px-6 py-3 text-lg"
+      };
+      return (
+        <button onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
+          {children}
+        </button>
+      );
+    }
+
+    // ========================================
+    // 💬 Chat Components
+    // ========================================
+
+    function TypingIndicator() {
+      return (
+        <div className="flex items-start gap-3 fade-in-up">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 text-lg shadow-md">
+            🎸
+          </div>
+          <div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl rounded-tl-md px-4 py-3 border border-gray-700/50">
+            <div className="flex gap-1.5">
+              <div className="w-2 h-2 bg-amber-400 rounded-full typing-dot"></div>
+              <div className="w-2 h-2 bg-amber-400 rounded-full typing-dot"></div>
+              <div className="w-2 h-2 bg-amber-400 rounded-full typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function formatMessage(text) {
+      let f = text;
+      // Code blocks
+      f = f.replace(/```\n?([\s\S]*?)```/g, '<pre class="bg-gray-900/80 rounded-lg p-3 my-2 text-xs font-mono text-amber-200 overflow-x-auto border border-gray-700/50">$1</pre>');
+      // Bold
+      f = f.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-300 font-semibold">$1</strong>');
+      // Line breaks
+      f = f.replace(/\n/g, '<br/>');
+      return f;
+    }
+
+    function ChatMessage({ message }) {
+      const isBot = message.sender === "bot";
+      return (
+        <div className={`flex items-start gap-3 fade-in-up ${isBot ? "" : "flex-row-reverse"}`}>
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-lg shadow-md ${
+            isBot ? "bg-gradient-to-br from-amber-500 to-orange-600" : "bg-gradient-to-br from-sky-500 to-blue-600"
+          }`}>
+            {isBot ? "🎸" : "🙂"}
+          </div>
+          <div
+            className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              isBot
+                ? "bg-gray-800/80 backdrop-blur-sm rounded-tl-md text-gray-200 border border-gray-700/50"
+                : "bg-gradient-to-r from-amber-600 to-amber-500 rounded-tr-md text-white shadow-md"
+            }`}
+            dangerouslySetInnerHTML={{ __html: formatMessage(message.text) }}
+          />
+        </div>
+      );
+    }
+
+    function SuggestionChips({ suggestions, onSelect }) {
+      return (
+        <div className="flex flex-wrap gap-2 px-4 pb-2">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => onSelect(s)}
+              className="px-3 py-1.5 text-xs bg-gray-800/60 hover:bg-amber-500/20 text-gray-300 hover:text-amber-300 rounded-full border border-gray-700/50 hover:border-amber-500/50 transition-all duration-200"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🚀 App Component
+    // ========================================
+
+    function App() {
+      const [messages, setMessages] = useState([
+        {
+          id: 1,
+          sender: "bot",
+          text: "🎸 안녕하세요! **기타 코치 AI 챗봇**입니다.\n\n기타를 배우는 데 필요한 모든 것을 알려드릴게요!\n\n🎵 **코드** - 다이어그램과 잡는 법\n🎶 **스트러밍** - 리듬 패턴 배우기\n🤌 **핑거피킹** - 아르페지오 & 트래비스 피킹\n🎵 **스케일** - 펜타토닉, 메이저, 블루스\n🔨 **테크닉** - 해머온, 풀오프, 벤딩 등\n📋 **연습 루틴** - 체계적인 연습 계획\n🎵 **곡 추천** - 레벨별 추천곡\n\n무엇부터 배워볼까요?",
+          time: new Date()
+        }
+      ]);
+      const [input, setInput] = useState("");
+      const [isTyping, setIsTyping] = useState(false);
+      const messagesEndRef = useRef(null);
+      const inputRef = useRef(null);
+
+      const suggestions = useMemo(() => [
+        "초보 입문 가이드",
+        "C코드 알려줘",
+        "스트러밍 패턴 알려줘",
+        "펜타토닉 스케일",
+        "곡 추천해줘",
+        "연습 루틴 짜줘"
+      ], []);
+
+      const scrollToBottom = useCallback(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, []);
+
+      useEffect(() => {
+        scrollToBottom();
+      }, [messages, isTyping, scrollToBottom]);
+
+      const handleSend = useCallback(async (text) => {
+        const messageText = (text || input).trim();
+        if (!messageText || isTyping) return;
+
+        const userMsg = { id: Date.now(), sender: "user", text: messageText, time: new Date() };
+        setMessages(prev => [...prev, userMsg]);
+        setInput("");
+        setIsTyping(true);
+
+        try {
+          const reply = await fetchAIResponse(messageText);
+          setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            sender: "bot",
+            text: reply,
+            time: new Date()
+          }]);
+        } catch (err) {
+          setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            sender: "bot",
+            text: `⚠️ 오류가 발생했습니다: ${err.message}\n\n다시 시도해주세요.`,
+            time: new Date()
+          }]);
+        } finally {
+          setIsTyping(false);
+          inputRef.current?.focus();
+        }
+      }, [input, isTyping]);
+
+      const handleKeyDown = useCallback((e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      }, [handleSend]);
+
+      const handleReset = useCallback(async () => {
+        try {
+          await fetch(`${API_BASE_URL}/api/chat/${SESSION_ID}`, { method: 'DELETE' });
+        } catch (e) {}
+        setMessages([{
+          id: Date.now(),
+          sender: "bot",
+          text: "🎸 대화가 초기화되었습니다! 무엇이든 물어보세요.",
+          time: new Date()
+        }]);
+      }, []);
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-amber-950/30 text-white flex flex-col">
+          {/* Header */}
+          <header className="bg-gray-900/90 backdrop-blur-md border-b border-amber-500/20 px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-2xl shadow-lg strum">
+              🎸
+            </div>
+            <div>
+              <h1 className="font-bold text-lg leading-tight bg-gradient-to-r from-amber-300 to-orange-400 bg-clip-text text-transparent">Guitar Coach AI</h1>
+              <p className="text-xs text-gray-400">AI 기타 학습 챗봇 - 무엇이든 물어보세요</p>
+            </div>
+            <button
+              onClick={handleReset}
+              className="ml-auto px-3 py-1.5 text-xs bg-gray-800/60 hover:bg-red-500/20 text-gray-400 hover:text-red-300 rounded-lg border border-gray-700/50 hover:border-red-500/50 transition-all"
+              title="대화 초기화"
+            >
+              새 대화
+            </button>
+          </header>
+
+          {/* Messages */}
+          <main className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+            {messages.map(msg => (
+              <ChatMessage key={msg.id} message={msg} />
+            ))}
+            {isTyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+          </main>
+
+          {/* Suggestions */}
+          {messages.length <= 2 && !isTyping && (
+            <SuggestionChips suggestions={suggestions} onSelect={handleSend} />
+          )}
+
+          {/* Input */}
+          <div className="bg-gray-900/90 backdrop-blur-md border-t border-amber-500/20 p-4">
+            <div className="max-w-3xl mx-auto flex gap-3">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="기타에 대해 무엇이든 물어보세요..."
+                className="flex-1 bg-gray-800/60 border border-gray-600/50 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
+                aria-label="메시지 입력"
+              />
+              <Button onClick={() => handleSend()} disabled={!input.trim() || isTyping} className="px-5">
+                전송
+              </Button>
+            </div>
+            <p className="text-center text-[11px] text-gray-600 mt-2">
+              GPT-4o-mini 기반 AI가 기타 학습을 도와드립니다
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🎬 Rendering
+    // ========================================
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
