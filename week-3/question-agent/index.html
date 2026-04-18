@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수업 내용 질문 에이전트</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    @keyframes pulse-dot { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+    .typing-dot { animation: pulse-dot 1.4s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    .markdown-body pre { border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+    .markdown-body code { font-size: 0.85em; }
+    .markdown-body p { margin: 4px 0; }
+    .markdown-body ul, .markdown-body ol { margin: 4px 0; padding-left: 1.5em; }
+    .markdown-body li { margin: 2px 0; }
+    .chat-scroll::-webkit-scrollbar { width: 6px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .context-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    textarea:focus, input:focus { outline: none; box-shadow: 0 0 0 2px rgba(99,102,241,0.3); }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
+
+    // ========================================
+    // 🗄️ Storage Utilities
+    // ========================================
+    const Storage = {
+      get(key, fallback) {
+        try {
+          const item = localStorage.getItem(key);
+          return item ? JSON.parse(item) : fallback;
+        } catch { return fallback; }
+      },
+      set(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+      },
+      remove(key) {
+        try { localStorage.removeItem(key); } catch {}
+      }
+    };
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+    function Button({ children, variant = 'primary', size = 'md', disabled, onClick, className = '', type = 'button' }) {
+      const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
+      const variants = {
+        primary: 'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800',
+        secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100',
+        danger: 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700',
+        ghost: 'text-gray-600 hover:bg-gray-100 active:bg-gray-200',
+        success: 'bg-emerald-500 text-white hover:bg-emerald-600 active:bg-emerald-700',
+      };
+      const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-sm', lg: 'px-6 py-2.5 text-base' };
+      return (
+        <button type={type} onClick={onClick} disabled={disabled}
+          className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
+          {children}
+        </button>
+      );
+    }
+
+    function Input({ label, type = 'text', value, onChange, placeholder, error, disabled, className = '' }) {
+      return (
+        <div className={className}>
+          {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+          <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
+            className={`w-full px-3 py-2 border rounded-lg text-sm transition ${error ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'}`} />
+          {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
+      );
+    }
+
+    function Textarea({ label, value, onChange, placeholder, rows = 4, className = '', mono = false }) {
+      return (
+        <div className={className}>
+          {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+          <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white transition resize-y ${mono ? 'font-mono' : ''}`} />
+        </div>
+      );
+    }
+
+    function Card({ children, className = '' }) {
+      return <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>{children}</div>;
+    }
+
+    function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+      if (!isOpen) return null;
+      const sizes = { sm: 'max-w-md', md: 'max-w-2xl', lg: 'max-w-4xl' };
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className={`relative bg-white rounded-2xl shadow-xl w-full ${sizes[size]} max-h-[85vh] flex flex-col`}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto flex-1">{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function Badge({ children, color = 'gray', className = '' }) {
+      const colors = {
+        gray: 'bg-gray-100 text-gray-700',
+        blue: 'bg-blue-100 text-blue-700',
+        green: 'bg-emerald-100 text-emerald-700',
+        purple: 'bg-purple-100 text-purple-700',
+        orange: 'bg-orange-100 text-orange-700',
+      };
+      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[color]} ${className}`}>{children}</span>;
+    }
+
+    function Tabs({ tabs, active, onChange }) {
+      return (
+        <div className="flex border-b border-gray-200">
+          {tabs.map(tab => (
+            <button key={tab.id} onClick={() => onChange(tab.id)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${active === tab.id
+                ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              {tab.icon && <span className="mr-1.5">{tab.icon}</span>}{tab.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🧠 Agent Context (Global State)
+    // ========================================
+    const AgentContext = createContext();
+
+    function AgentProvider({ children }) {
+      const [apiKey, setApiKey] = useState(() => Storage.get('agent_api_key', ''));
+      const [model, setModel] = useState(() => Storage.get('agent_model', 'claude-sonnet-4-20250514'));
+      const [contexts, setContexts] = useState(() => Storage.get('agent_contexts', []));
+      const [conversations, setConversations] = useState(() => Storage.get('agent_conversations', []));
+      const [activeConvId, setActiveConvId] = useState(() => Storage.get('agent_active_conv', null));
+      const [memories, setMemories] = useState(() => Storage.get('agent_memories', []));
+
+      useEffect(() => Storage.set('agent_api_key', apiKey), [apiKey]);
+      useEffect(() => Storage.set('agent_model', model), [model]);
+      useEffect(() => Storage.set('agent_contexts', contexts), [contexts]);
+      useEffect(() => Storage.set('agent_conversations', conversations), [conversations]);
+      useEffect(() => Storage.set('agent_active_conv', activeConvId), [activeConvId]);
+      useEffect(() => Storage.set('agent_memories', memories), [memories]);
+
+      const activeConversation = useMemo(
+        () => conversations.find(c => c.id === activeConvId) || null,
+        [conversations, activeConvId]
+      );
+
+      const addContext = useCallback((ctx) => {
+        setContexts(prev => [...prev, { ...ctx, id: Date.now().toString(), createdAt: new Date().toISOString() }]);
+      }, []);
+
+      const updateContext = useCallback((id, updates) => {
+        setContexts(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+      }, []);
+
+      const deleteContext = useCallback((id) => {
+        setContexts(prev => prev.filter(c => c.id !== id));
+      }, []);
+
+      const createConversation = useCallback((title) => {
+        const conv = { id: Date.now().toString(), title: title || '새 대화', messages: [], createdAt: new Date().toISOString() };
+        setConversations(prev => [conv, ...prev]);
+        setActiveConvId(conv.id);
+        return conv.id;
+      }, []);
+
+      const deleteConversation = useCallback((id) => {
+        setConversations(prev => prev.filter(c => c.id !== id));
+        setActiveConvId(prev => prev === id ? null : prev);
+      }, []);
+
+      const addMessage = useCallback((convId, message) => {
+        setConversations(prev => prev.map(c =>
+          c.id === convId ? { ...c, messages: [...c.messages, { ...message, id: Date.now().toString(), timestamp: new Date().toISOString() }] } : c
+        ));
+      }, []);
+
+      const updateLastAssistantMessage = useCallback((convId, content) => {
+        setConversations(prev => prev.map(c => {
+          if (c.id !== convId) return c;
+          const msgs = [...c.messages];
+          for (let i = msgs.length - 1; i >= 0; i--) {
+            if (msgs[i].role === 'assistant') {
+              msgs[i] = { ...msgs[i], content };
+              break;
+            }
+          }
+          return { ...c, messages: msgs };
+        }));
+      }, []);
+
+      const addMemory = useCallback((memory) => {
+        setMemories(prev => [...prev, { ...memory, id: Date.now().toString(), createdAt: new Date().toISOString() }]);
+      }, []);
+
+      const deleteMemory = useCallback((id) => {
+        setMemories(prev => prev.filter(m => m.id !== id));
+      }, []);
+
+      return (
+        <AgentContext.Provider value={{
+          apiKey, setApiKey, model, setModel,
+          contexts, addContext, updateContext, deleteContext,
+          conversations, activeConvId, setActiveConvId, activeConversation,
+          createConversation, deleteConversation, addMessage, updateLastAssistantMessage,
+          memories, addMemory, deleteMemory
+        }}>
+          {children}
+        </AgentContext.Provider>
+      );
+    }
+
+    function useAgent() { return useContext(AgentContext); }
+
+    // ========================================
+    // 🤖 AI API Call Logic
+    // ========================================
+    function buildSystemPrompt(contexts, memories) {
+      let prompt = `당신은 수업 내용 전문 질문 답변 에이전트입니다.
+학생이 수업과 관련된 질문을 하면, 아래 제공된 수업 자료(텍스트 컨텍스트)와 실습 코드(코드 컨텍스트)를 참조하여 정확하고 친절하게 답변해야 합니다.
+
+답변 규칙:
+1. 수업 자료에 있는 내용을 기반으로 정확하게 답변합니다.
+2. 코드 관련 질문은 실습 코드를 참조하여 설명합니다.
+3. 자료에 없는 내용은 "수업 자료에서 해당 내용을 찾을 수 없습니다"라고 솔직히 말합니다.
+4. 답변은 마크다운 형식으로 작성하며, 코드 블록은 적절한 언어 태그를 사용합니다.
+5. 이전 대화 맥락을 기억하고 이어서 답변합니다.
+`;
+
+      if (contexts.length > 0) {
+        prompt += `\n\n===== 수업 자료 =====\n`;
+        contexts.forEach((ctx, i) => {
+          prompt += `\n--- [${ctx.type === 'text' ? '📝 텍스트' : '💻 코드'}] ${ctx.title} ---\n`;
+          if (ctx.type === 'code' && ctx.language) prompt += `(언어: ${ctx.language})\n`;
+          prompt += ctx.content + '\n';
+        });
+      }
+
+      if (memories.length > 0) {
+        prompt += `\n\n===== 에이전트 메모리 (이전 대화에서 기억한 내용) =====\n`;
+        memories.forEach(m => {
+          prompt += `- [${m.category}] ${m.content}\n`;
+        });
+      }
+
+      return prompt;
+    }
+
+    async function callClaudeAPI(apiKey, model, systemPrompt, messages, onStream) {
+      const apiMessages = messages.map(m => ({ role: m.role, content: m.content }));
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: model,
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: apiMessages,
+          stream: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API 오류 (${response.status})`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                fullText += parsed.delta.text;
+                onStream(fullText);
+              }
+            } catch {}
+          }
+        }
+      }
+
+      return fullText;
+    }
+
+    // ========================================
+    // 📚 Context Manager Page
+    // ========================================
+    function ContextManager() {
+      const { contexts, addContext, updateContext, deleteContext } = useAgent();
+      const [showModal, setShowModal] = useState(false);
+      const [editingCtx, setEditingCtx] = useState(null);
+      const [form, setForm] = useState({ title: '', type: 'text', language: '', content: '' });
+      const [filter, setFilter] = useState('all');
+
+      const filtered = filter === 'all' ? contexts : contexts.filter(c => c.type === filter);
+
+      function openAdd() {
+        setEditingCtx(null);
+        setForm({ title: '', type: 'text', language: '', content: '' });
+        setShowModal(true);
+      }
+
+      function openEdit(ctx) {
+        setEditingCtx(ctx);
+        setForm({ title: ctx.title, type: ctx.type, language: ctx.language || '', content: ctx.content });
+        setShowModal(true);
+      }
+
+      function handleSave() {
+        if (!form.title.trim() || !form.content.trim()) return;
+        if (editingCtx) {
+          updateContext(editingCtx.id, form);
+        } else {
+          addContext(form);
+        }
+        setShowModal(false);
+      }
+
+      return (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">수업 자료 관리</h2>
+              <p className="text-sm text-gray-500 mt-0.5">강의 노트와 실습 코드를 추가하세요. 에이전트가 답변 시 참조합니다.</p>
+            </div>
+            <Button onClick={openAdd}>+ 자료 추가</Button>
+          </div>
+
+          <div className="flex gap-2">
+            {[['all', '전체'], ['text', '📝 텍스트'], ['code', '💻 코드']].map(([val, label]) => (
+              <button key={val} onClick={() => setFilter(val)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition ${filter === val ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-500 hover:bg-gray-100'}`}>
+                {label} {val === 'all' ? `(${contexts.length})` : `(${contexts.filter(c => c.type === val).length})`}
+              </button>
+            ))}
+          </div>
+
+          {filtered.length === 0 ? (
+            <Card className="p-12 text-center">
+              <div className="text-4xl mb-3">📂</div>
+              <p className="text-gray-500 font-medium">등록된 수업 자료가 없습니다</p>
+              <p className="text-gray-400 text-sm mt-1">자료를 추가하면 에이전트가 답변 시 참조합니다</p>
+              <Button onClick={openAdd} className="mt-4">첫 자료 추가하기</Button>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {filtered.map(ctx => (
+                <Card key={ctx.id} className="p-4 context-card transition-all duration-200 cursor-pointer" onClick={() => openEdit(ctx)}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge color={ctx.type === 'text' ? 'blue' : 'green'}>
+                          {ctx.type === 'text' ? '📝 텍스트' : '💻 코드'}
+                        </Badge>
+                        {ctx.language && <Badge color="purple">{ctx.language}</Badge>}
+                      </div>
+                      <h3 className="font-semibold text-gray-900 truncate">{ctx.title}</h3>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {ctx.content.length}자 · {new Date(ctx.createdAt).toLocaleDateString('ko-KR')}
+                      </p>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); deleteContext(ctx.id); }}
+                      className="text-gray-300 hover:text-red-500 ml-2 text-lg" title="삭제">&times;</button>
+                  </div>
+                  <pre className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2 max-h-20 overflow-hidden whitespace-pre-wrap">
+                    {ctx.content.slice(0, 200)}{ctx.content.length > 200 ? '...' : ''}
+                  </pre>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <Modal isOpen={showModal} onClose={() => setShowModal(false)}
+            title={editingCtx ? '자료 수정' : '자료 추가'} size="lg">
+            <div className="space-y-4">
+              <Input label="제목" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="예: 3주차 - React Hooks 개념 정리" />
+              <div className="flex gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">유형</label>
+                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                    <option value="text">📝 텍스트 (강의 노트)</option>
+                    <option value="code">💻 코드 (실습 코드)</option>
+                  </select>
+                </div>
+                {form.type === 'code' && (
+                  <Input label="프로그래밍 언어" value={form.language}
+                    onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
+                    placeholder="예: javascript, python" />
+                )}
+              </div>
+              <Textarea label="내용" value={form.content}
+                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                placeholder={form.type === 'text'
+                  ? '강의 노트, 개념 설명, 요약 내용 등을 입력하세요...'
+                  : '실습 코드, 예제 코드를 붙여넣으세요...'}
+                rows={12} mono={form.type === 'code'} />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="secondary" onClick={() => setShowModal(false)}>취소</Button>
+                <Button onClick={handleSave} disabled={!form.title.trim() || !form.content.trim()}>
+                  {editingCtx ? '수정 완료' : '추가'}
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 💬 Chat Page
+    // ========================================
+    function MarkdownRenderer({ content }) {
+      const html = useMemo(() => {
+        if (!content) return '';
+        const raw = marked.parse(content, { breaks: true, gfm: true });
+        return raw;
+      }, [content]);
+
+      const ref = useRef(null);
+      useEffect(() => {
+        if (ref.current) {
+          ref.current.querySelectorAll('pre code').forEach(block => {
+            hljs.highlightElement(block);
+          });
+        }
+      }, [html]);
+
+      return <div ref={ref} className="markdown-body text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />;
+    }
+
+    function ChatMessage({ message }) {
+      const isUser = message.role === 'user';
+      return (
+        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+          {!isUser && (
+            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-sm mr-2 flex-shrink-0 mt-1">🤖</div>
+          )}
+          <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${isUser
+            ? 'bg-indigo-600 text-white rounded-br-md'
+            : 'bg-white border border-gray-200 rounded-bl-md shadow-sm'}`}>
+            {isUser ? (
+              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            ) : (
+              <MarkdownRenderer content={message.content} />
+            )}
+            <p className={`text-[10px] mt-1 ${isUser ? 'text-indigo-200' : 'text-gray-300'}`}>
+              {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : ''}
+            </p>
+          </div>
+          {isUser && (
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm ml-2 flex-shrink-0 mt-1">👤</div>
+          )}
+        </div>
+      );
+    }
+
+    function TypingIndicator() {
+      return (
+        <div className="flex justify-start mb-4">
+          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-sm mr-2">🤖</div>
+          <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ChatPage() {
+      const {
+        apiKey, contexts, memories, addMemory,
+        conversations, activeConvId, setActiveConvId, activeConversation,
+        createConversation, deleteConversation, addMessage, updateLastAssistantMessage, model
+      } = useAgent();
+      const [input, setInput] = useState('');
+      const [isLoading, setIsLoading] = useState(false);
+      const [error, setError] = useState('');
+      const [showSidebar, setShowSidebar] = useState(true);
+      const chatEndRef = useRef(null);
+      const inputRef = useRef(null);
+
+      useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [activeConversation?.messages]);
+
+      async function handleSend() {
+        if (!input.trim() || isLoading) return;
+        if (!apiKey) { setError('설정에서 API Key를 먼저 입력해주세요.'); return; }
+
+        let convId = activeConvId;
+        if (!convId) {
+          convId = createConversation(input.trim().slice(0, 30) + (input.trim().length > 30 ? '...' : ''));
+        }
+
+        const userMsg = { role: 'user', content: input.trim() };
+        addMessage(convId, userMsg);
+        setInput('');
+        setError('');
+        setIsLoading(true);
+
+        // Placeholder for streaming assistant message
+        addMessage(convId, { role: 'assistant', content: '' });
+
+        try {
+          const conv = conversations.find(c => c.id === convId);
+          const allMessages = [...(conv?.messages || []), userMsg];
+          const systemPrompt = buildSystemPrompt(contexts, memories);
+
+          const finalText = await callClaudeAPI(apiKey, model, systemPrompt, allMessages, (partial) => {
+            updateLastAssistantMessage(convId, partial);
+          });
+
+          updateLastAssistantMessage(convId, finalText);
+
+          // Auto-memory: extract key topics
+          autoExtractMemory(input.trim(), finalText);
+        } catch (err) {
+          updateLastAssistantMessage(convId, `⚠️ 오류가 발생했습니다: ${err.message}`);
+          setError(err.message);
+        } finally {
+          setIsLoading(false);
+          inputRef.current?.focus();
+        }
+      }
+
+      function autoExtractMemory(question, answer) {
+        // Simple heuristic: remember important Q&A topics
+        const keywords = ['정의', '개념', '차이', '비교', '원리', '방법', '예제', '중요'];
+        const isImportant = keywords.some(kw => question.includes(kw));
+        if (isImportant && answer.length > 50) {
+          addMemory({
+            category: '학습 내용',
+            content: `Q: ${question.slice(0, 80)} → 핵심: ${answer.slice(0, 150)}...`,
+          });
+        }
+      }
+
+      function handleKeyDown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      }
+
+      return (
+        <div className="flex h-[calc(100vh-64px)]">
+          {/* Sidebar - conversation list */}
+          {showSidebar && (
+            <div className="w-64 border-r border-gray-200 bg-white flex flex-col flex-shrink-0">
+              <div className="p-3 border-b">
+                <Button onClick={() => { createConversation('새 대화'); }} className="w-full" size="sm">
+                  + 새 대화
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {conversations.map(conv => (
+                  <div key={conv.id}
+                    className={`flex items-center justify-between px-3 py-2.5 cursor-pointer border-b border-gray-50 transition
+                      ${conv.id === activeConvId ? 'bg-indigo-50 border-l-2 border-l-indigo-500' : 'hover:bg-gray-50'}`}
+                    onClick={() => setActiveConvId(conv.id)}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{conv.title}</p>
+                      <p className="text-[10px] text-gray-400">{conv.messages.length}개 메시지</p>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); deleteConversation(conv.id); }}
+                      className="text-gray-300 hover:text-red-400 ml-1">&times;</button>
+                  </div>
+                ))}
+                {conversations.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center mt-8 px-4">대화가 없습니다.<br/>질문을 시작해보세요!</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Chat area */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex items-center gap-2 px-4 py-2 border-b bg-white">
+              <button onClick={() => setShowSidebar(s => !s)}
+                className="text-gray-400 hover:text-gray-600 text-lg">☰</button>
+              <h3 className="text-sm font-medium text-gray-700 truncate">
+                {activeConversation ? activeConversation.title : '대화를 선택하거나 새 질문을 시작하세요'}
+              </h3>
+              {contexts.length > 0 && (
+                <Badge color="green" className="ml-auto">{contexts.length}개 자료 참조 중</Badge>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 chat-scroll bg-gray-50">
+              {(!activeConversation || activeConversation.messages.length === 0) && (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="text-5xl mb-4">🎓</div>
+                  <h3 className="text-lg font-semibold text-gray-700">수업 내용 질문 에이전트</h3>
+                  <p className="text-sm text-gray-400 mt-2 max-w-sm">
+                    수업에서 배운 내용에 대해 무엇이든 질문하세요.<br/>
+                    등록된 강의 노트와 실습 코드를 참조하여 답변합니다.
+                  </p>
+                  {contexts.length === 0 && (
+                    <p className="text-xs text-orange-500 mt-3 bg-orange-50 px-3 py-1.5 rounded-lg">
+                      💡 먼저 "자료 관리" 탭에서 수업 자료를 추가하세요
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                    {['이 개념을 쉽게 설명해줘', '코드 예제를 보여줘', '이 두 개념의 차이는?'].map(q => (
+                      <button key={q} onClick={() => setInput(q)}
+                        className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1.5 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition">
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {activeConversation?.messages.filter(m => m.content !== '').map(msg => (
+                <ChatMessage key={msg.id} message={msg} />
+              ))}
+              {isLoading && !activeConversation?.messages.some(m => m.role === 'assistant' && m.content) && <TypingIndicator />}
+              <div ref={chatEndRef} />
+            </div>
+
+            {error && (
+              <div className="px-4 py-2 bg-red-50 border-t border-red-100 text-red-600 text-xs flex items-center gap-2">
+                <span>⚠️ {error}</span>
+                <button onClick={() => setError('')} className="text-red-400 hover:text-red-600">&times;</button>
+              </div>
+            )}
+
+            <div className="border-t bg-white p-3">
+              <div className="flex gap-2 max-w-4xl mx-auto">
+                <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="수업 내용에 대해 질문하세요... (Shift+Enter: 줄바꿈)"
+                  rows={1}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm resize-none bg-white focus:border-indigo-400"
+                  style={{ minHeight: '42px', maxHeight: '120px' }}
+                  disabled={isLoading} />
+                <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
+                  {isLoading ? '...' : '전송'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🧠 Memory Page
+    // ========================================
+    function MemoryPage() {
+      const { memories, addMemory, deleteMemory } = useAgent();
+      const [showAdd, setShowAdd] = useState(false);
+      const [form, setForm] = useState({ category: '핵심 개념', content: '' });
+
+      const categories = ['핵심 개념', '학습 내용', '코드 패턴', '시험 포인트', '기타'];
+
+      function handleAdd() {
+        if (!form.content.trim()) return;
+        addMemory(form);
+        setForm({ category: '핵심 개념', content: '' });
+        setShowAdd(false);
+      }
+
+      const grouped = useMemo(() => {
+        const map = {};
+        memories.forEach(m => {
+          if (!map[m.category]) map[m.category] = [];
+          map[m.category].push(m);
+        });
+        return map;
+      }, [memories]);
+
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">에이전트 메모리</h2>
+              <p className="text-sm text-gray-500 mt-0.5">에이전트가 기억하는 내용입니다. 대화 시 자동 참조됩니다.</p>
+            </div>
+            <Button onClick={() => setShowAdd(true)}>+ 메모리 추가</Button>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <Card className="p-4 bg-indigo-50 border-indigo-200">
+              <div className="text-2xl font-bold text-indigo-700">{memories.length}</div>
+              <p className="text-sm text-indigo-600">총 메모리</p>
+            </Card>
+            <Card className="p-4 bg-emerald-50 border-emerald-200">
+              <div className="text-2xl font-bold text-emerald-700">{Object.keys(grouped).length}</div>
+              <p className="text-sm text-emerald-600">카테고리</p>
+            </Card>
+            <Card className="p-4 bg-purple-50 border-purple-200">
+              <div className="text-2xl font-bold text-purple-700">
+                {memories.filter(m => m.category === '학습 내용').length}
+              </div>
+              <p className="text-sm text-purple-600">자동 기억됨</p>
+            </Card>
+          </div>
+
+          {memories.length === 0 ? (
+            <Card className="p-12 text-center">
+              <div className="text-4xl mb-3">🧠</div>
+              <p className="text-gray-500 font-medium">아직 메모리가 없습니다</p>
+              <p className="text-gray-400 text-sm mt-1">대화 중 중요한 질문은 자동으로 기억됩니다</p>
+            </Card>
+          ) : (
+            Object.entries(grouped).map(([cat, mems]) => (
+              <div key={cat}>
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">{cat} ({mems.length})</h3>
+                <div className="space-y-2">
+                  {mems.map(m => (
+                    <Card key={m.id} className="p-3 flex items-start gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-800">{m.content}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{new Date(m.createdAt).toLocaleString('ko-KR')}</p>
+                      </div>
+                      <button onClick={() => deleteMemory(m.id)} className="text-gray-300 hover:text-red-400 text-sm">&times;</button>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+
+          <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="메모리 추가">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <Textarea label="내용" value={form.content}
+                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                placeholder="에이전트가 기억할 내용을 입력하세요..." rows={4} />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="secondary" onClick={() => setShowAdd(false)}>취소</Button>
+                <Button onClick={handleAdd} disabled={!form.content.trim()}>추가</Button>
+              </div>
+            </div>
+          </Modal>
+        </div>
+      );
+    }
+
+    // ========================================
+    // ⚙️ Settings Page
+    // ========================================
+    function SettingsPage() {
+      const { apiKey, setApiKey, model, setModel, contexts, conversations, memories } = useAgent();
+      const [showKey, setShowKey] = useState(false);
+      const [tempKey, setTempKey] = useState(apiKey);
+
+      function handleClearAll() {
+        if (confirm('모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+          localStorage.clear();
+          location.reload();
+        }
+      }
+
+      return (
+        <div className="space-y-6 max-w-2xl">
+          <h2 className="text-xl font-bold text-gray-900">설정</h2>
+
+          <Card className="p-5 space-y-4">
+            <h3 className="font-semibold text-gray-800">API 설정</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Anthropic API Key</label>
+              <div className="flex gap-2">
+                <input type={showKey ? 'text' : 'password'} value={tempKey}
+                  onChange={e => setTempKey(e.target.value)}
+                  placeholder="sk-ant-..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono bg-white" />
+                <Button variant="ghost" size="sm" onClick={() => setShowKey(s => !s)}>
+                  {showKey ? '숨기기' : '보기'}
+                </Button>
+                <Button size="sm" onClick={() => setApiKey(tempKey)} disabled={tempKey === apiKey}>저장</Button>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">API Key는 브라우저 로컬 스토리지에 저장됩니다</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">모델</label>
+              <select value={model} onChange={e => { setModel(e.target.value); Storage.set('agent_model', e.target.value); }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                <option value="claude-opus-4-20250514">Claude Opus 4</option>
+              </select>
+            </div>
+          </Card>
+
+          <Card className="p-5 space-y-3">
+            <h3 className="font-semibold text-gray-800">데이터 현황</h3>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-xl font-bold text-gray-700">{contexts.length}</div>
+                <p className="text-xs text-gray-500">수업 자료</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-xl font-bold text-gray-700">{conversations.length}</div>
+                <p className="text-xs text-gray-500">대화 수</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="text-xl font-bold text-gray-700">{memories.length}</div>
+                <p className="text-xs text-gray-500">메모리</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5 border-red-200">
+            <h3 className="font-semibold text-red-600 mb-2">위험 영역</h3>
+            <p className="text-sm text-gray-500 mb-3">모든 데이터(자료, 대화, 메모리, API Key)를 삭제합니다.</p>
+            <Button variant="danger" onClick={handleClearAll}>전체 초기화</Button>
+          </Card>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🚀 App Component
+    // ========================================
+    function App() {
+      const [activeTab, setActiveTab] = useState('chat');
+
+      const tabs = [
+        { id: 'chat', label: '질문하기', icon: '💬' },
+        { id: 'contexts', label: '자료 관리', icon: '📚' },
+        { id: 'memory', label: '메모리', icon: '🧠' },
+        { id: 'settings', label: '설정', icon: '⚙️' },
+      ];
+
+      return (
+        <AgentProvider>
+          <div className="min-h-screen flex flex-col">
+            <header className="bg-white border-b border-gray-200 px-4 flex items-center justify-between h-16 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎓</span>
+                <div>
+                  <h1 className="text-base font-bold text-gray-900">수업 내용 질문 에이전트</h1>
+                  <p className="text-[10px] text-gray-400">강의 노트 & 실습 코드 기반 AI 튜터</p>
+                </div>
+              </div>
+              <Tabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+            </header>
+            <main className={`flex-1 ${activeTab === 'chat' ? '' : 'p-4 md:p-6 overflow-y-auto'}`}>
+              {activeTab === 'chat' && <ChatPage />}
+              {activeTab === 'contexts' && <ContextManager />}
+              {activeTab === 'memory' && <MemoryPage />}
+              {activeTab === 'settings' && <SettingsPage />}
+            </main>
+          </div>
+        </AgentProvider>
+      );
+    }
+
+    // ========================================
+    // 🎬 Rendering
+    // ========================================
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
