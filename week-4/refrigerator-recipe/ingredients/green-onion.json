@@ -1,0 +1,10 @@
+{
+  "name": "대파",
+  "name_en": "green onion",
+  "category": "채소",
+  "quantity": 3,
+  "unit": "대",
+  "expiration": "2026-04-30",
+  "storage": "냉장",
+  "notes": "국물, 볶음, 고명 모두 활용"
+}

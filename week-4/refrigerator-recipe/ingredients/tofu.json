@@ -1,0 +1,10 @@
+{
+  "name": "두부",
+  "name_en": "tofu",
+  "category": "단백질",
+  "quantity": 1,
+  "unit": "모",
+  "expiration": "2026-04-28",
+  "storage": "냉장",
+  "notes": "부침용, 찌개에도 사용 가능"
+}

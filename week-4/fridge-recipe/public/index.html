@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>냉장고 & 레시피 매니저</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>🥕 냉장고 & 레시피</h1>
+    <p class="subtitle">재료를 등록하고, 레시피를 저장/조회합니다.</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>냉장고 재료</h2>
+
+      <form id="ingredient-form" class="row">
+        <input id="ing-name" type="text" placeholder="재료 이름 (예: 계란)" required />
+        <input id="ing-category" type="text" placeholder="카테고리 (선택, 예: 유제품)" />
+        <button type="submit">추가</button>
+      </form>
+
+      <div id="ingredient-list" class="tag-list" aria-live="polite">
+        <p class="empty">아직 등록된 재료가 없습니다.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>🤖 AI 레시피 생성</h2>
+      <p class="hint">냉장고 재료를 기반으로 AI가 레시피를 만들어 줍니다.</p>
+
+      <div class="row">
+        <select id="ai-option">
+          <option value="제한 없음">제한 없음</option>
+          <option value="간단 요리">간단 요리 (15분)</option>
+          <option value="다이어트">다이어트</option>
+          <option value="야식">야식</option>
+          <option value="든든한 식사">든든한 식사</option>
+        </select>
+        <button id="ai-generate" type="button">레시피 생성</button>
+      </div>
+
+      <div id="ai-preview" hidden></div>
+    </section>
+
+    <section class="panel">
+      <h2>레시피 작성 (직접)</h2>
+
+      <form id="recipe-form" class="stack">
+        <input id="rec-title" type="text" placeholder="요리 이름 (예: 계란말이)" required />
+        <textarea id="rec-ingredients" rows="3" placeholder="재료 (예: 계란 3개, 소금 약간, 파 조금)" required></textarea>
+        <textarea id="rec-steps" rows="5" placeholder="조리법을 단계별로 적어주세요" required></textarea>
+        <button type="submit">레시피 저장</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>저장된 레시피 <span id="recipe-count" class="count"></span></h2>
+
+      <div class="filters">
+        <label>
+          출처
+          <select id="filter-source">
+            <option value="">전체</option>
+            <option value="ai">AI 생성</option>
+            <option value="user">직접 작성</option>
+          </select>
+        </label>
+        <label>
+          옵션
+          <select id="filter-option">
+            <option value="">전체</option>
+            <option value="제한 없음">제한 없음</option>
+            <option value="간단 요리">간단 요리</option>
+            <option value="다이어트">다이어트</option>
+            <option value="야식">야식</option>
+            <option value="든든한 식사">든든한 식사</option>
+          </select>
+        </label>
+        <label>
+          난이도
+          <select id="filter-difficulty">
+            <option value="">전체</option>
+            <option value="쉬움">쉬움</option>
+            <option value="보통">보통</option>
+            <option value="어려움">어려움</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="recipe-list" aria-live="polite">
+        <p class="empty">아직 저장된 레시피가 없습니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/client.js"></script>
+</body>
+</html>

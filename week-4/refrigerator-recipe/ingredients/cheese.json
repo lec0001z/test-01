@@ -1,0 +1,10 @@
+{
+  "name": "체다치즈",
+  "name_en": "cheddar cheese",
+  "category": "유제품",
+  "quantity": 10,
+  "unit": "장",
+  "expiration": "2026-06-15",
+  "storage": "냉장",
+  "notes": "슬라이스 치즈, 토핑/녹임용"
+}

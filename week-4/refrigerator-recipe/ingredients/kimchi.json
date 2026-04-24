@@ -1,0 +1,10 @@
+{
+  "name": "김치",
+  "name_en": "kimchi",
+  "category": "발효식품",
+  "quantity": 500,
+  "unit": "g",
+  "expiration": "2026-06-30",
+  "storage": "냉장",
+  "notes": "잘 익은 신김치, 볶음/찌개용으로 적합"
+}

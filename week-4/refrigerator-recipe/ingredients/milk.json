@@ -1,0 +1,10 @@
+{
+  "name": "우유",
+  "name_en": "milk",
+  "category": "유제품",
+  "quantity": 1000,
+  "unit": "ml",
+  "expiration": "2026-05-01",
+  "storage": "냉장",
+  "notes": "일반 흰우유"
+}

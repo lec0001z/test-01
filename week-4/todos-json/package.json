@@ -1,0 +1,13 @@
+{
+  "name": "todos-json-server",
+  "version": "1.0.0",
+  "description": "JSON-file-based todo server reading/writing todos.json in this folder.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.0.0"
+  }
+}

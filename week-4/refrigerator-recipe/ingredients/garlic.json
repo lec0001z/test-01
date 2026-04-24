@@ -1,0 +1,10 @@
+{
+  "name": "마늘",
+  "name_en": "garlic",
+  "category": "채소",
+  "quantity": 1,
+  "unit": "통",
+  "expiration": "2026-05-20",
+  "storage": "실온",
+  "notes": "다진 마늘로도 사용 가능"
+}

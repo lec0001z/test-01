@@ -1,0 +1,10 @@
+{
+  "name": "계란",
+  "name_en": "egg",
+  "category": "단백질",
+  "quantity": 10,
+  "unit": "개",
+  "expiration": "2026-05-10",
+  "storage": "냉장",
+  "notes": "유정란, 신선함"
+}

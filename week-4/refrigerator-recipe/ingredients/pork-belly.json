@@ -1,0 +1,10 @@
+{
+  "name": "삼겹살",
+  "name_en": "pork belly",
+  "category": "육류",
+  "quantity": 300,
+  "unit": "g",
+  "expiration": "2026-04-27",
+  "storage": "냉장",
+  "notes": "구이, 김치찌개, 볶음용"
+}

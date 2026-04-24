@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>익명 고민/칭찬/응원 게시판</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>익명 게시판</h1>
+      <p class="subtitle">고민을 나누고, 칭찬과 응원을 보내주세요.</p>
+    </header>
+
+    <section class="write-card">
+      <h2>글쓰기</h2>
+      <form id="post-form">
+        <div class="row">
+          <label for="category">카테고리</label>
+          <select id="category" name="category" required>
+            <option value="고민">고민</option>
+            <option value="칭찬">칭찬</option>
+            <option value="응원">응원</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="content">내용 <span class="counter"><span id="char-count">0</span>/500</span></label>
+          <textarea id="content" name="content" maxlength="500" rows="4" placeholder="익명으로 남기고 싶은 이야기를 적어주세요." required></textarea>
+        </div>
+        <button type="submit" id="submit-btn">올리기</button>
+        <p id="form-error" class="error" role="alert"></p>
+      </form>
+    </section>
+
+    <section class="list-card">
+      <div class="list-header">
+        <h2>전체 글</h2>
+        <div class="sort-tabs" role="tablist">
+          <button class="sort-tab active" data-sort="latest" role="tab">최신순</button>
+          <button class="sort-tab" data-sort="likes" role="tab">공감순</button>
+        </div>
+      </div>
+      <div id="posts"></div>
+      <p id="empty" class="empty" hidden>아직 글이 없어요. 첫 글을 남겨보세요!</p>
+    </section>
+  </main>
+
+  <script src="client.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "todos-sqlite-server",
+  "version": "1.0.0",
+  "description": "SQLite-backed todo server storing todos in todos.db.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.0.0"
+  }
+}

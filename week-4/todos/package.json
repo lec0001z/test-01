@@ -1,0 +1,13 @@
+{
+  "name": "todos-server",
+  "version": "1.0.0",
+  "description": "File-based todo server that reads/writes .txt files in this folder.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.0.0"
+  }
+}

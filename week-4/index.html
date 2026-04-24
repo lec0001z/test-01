@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>할 일 앱 (localStorage)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-sky-50 to-indigo-100 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    const STORAGE_KEY = 'todos-localstorage-v1';
+
+    // ========================================
+    // 💾 Storage helpers
+    // ========================================
+
+    function loadTodos() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTodos(todos) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      } catch (e) {
+        console.error('localStorage 저장 실패', e);
+      }
+    }
+
+    function formatDate(s) {
+      if (!s) return '';
+      return s.replace('T', ' ').slice(0, 16);
+    }
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+
+    function Button({ variant = 'primary', size = 'md', disabled = false, onClick, className = '', children, type = 'button' }) {
+      const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+      const variants = {
+        primary: 'bg-sky-600 text-white hover:bg-sky-700 focus:ring-sky-500',
+        secondary: 'bg-slate-200 text-slate-800 hover:bg-slate-300 focus:ring-slate-400',
+        danger: 'bg-rose-500 text-white hover:bg-rose-600 focus:ring-rose-400',
+        ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus:ring-slate-300',
+      };
+      const sizes = {
+        sm: 'px-2.5 py-1 text-sm',
+        md: 'px-4 py-2 text-sm',
+        lg: 'px-5 py-2.5 text-base',
+      };
+      return (
+        <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}>
+          {children}
+        </button>
+      );
+    }
+
+    function Input({ type = 'text', label, value, onChange, placeholder, error, disabled = false, className = '' }) {
+      return (
+        <div className={`w-full ${className}`}>
+          {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
+          <input
+            type={type}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`w-full px-3 py-2 border rounded-lg bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${error ? 'border-rose-400' : 'border-slate-300'}`}
+          />
+          {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
+        </div>
+      );
+    }
+
+    function Card({ children, className = '' }) {
+      return (
+        <div className={`bg-white rounded-2xl shadow-sm border border-sky-100 p-6 ${className}`}>
+          {children}
+        </div>
+      );
+    }
+
+    function Badge({ color = 'slate', children }) {
+      const colors = {
+        slate: 'bg-slate-100 text-slate-700',
+        sky: 'bg-sky-100 text-sky-700',
+        rose: 'bg-rose-100 text-rose-700',
+      };
+      return (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[color]}`}>
+          {children}
+        </span>
+      );
+    }
+
+    // ========================================
+    // 🧩 TodoItem
+    // ========================================
+
+    function TodoItem({ todo, onDelete, onSave }) {
+      const [editing, setEditing] = useState(false);
+      const [draft, setDraft] = useState(todo.content);
+
+      function startEdit() {
+        setDraft(todo.content);
+        setEditing(true);
+      }
+
+      function save() {
+        onSave(todo.id, draft);
+        setEditing(false);
+      }
+
+      return (
+        <li className="py-4 px-2 border-b border-sky-50 last:border-0">
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="font-semibold text-slate-800 truncate">{todo.title}</span>
+                <Badge color="sky">#{todo.id}</Badge>
+                <span className="text-xs text-slate-400">{formatDate(todo.created_at)}</span>
+              </div>
+              {editing ? (
+                <textarea
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  rows={2}
+                  className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              ) : (
+                <p className="text-sm text-slate-600 whitespace-pre-wrap break-words">
+                  {todo.content.trim() || <span className="text-slate-400 italic">내용 없음</span>}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col gap-1 shrink-0">
+              {editing ? (
+                <>
+                  <Button size="sm" onClick={save}>저장</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>취소</Button>
+                </>
+              ) : (
+                <>
+                  <Button size="sm" variant="secondary" onClick={startEdit}>수정</Button>
+                  <Button size="sm" variant="danger" onClick={() => onDelete(todo.id)}>삭제</Button>
+                </>
+              )}
+            </div>
+          </div>
+        </li>
+      );
+    }
+
+    // ========================================
+    // 📄 TodoApp
+    // ========================================
+
+    function TodoApp() {
+      const [todos, setTodos] = useState(() => loadTodos());
+      const [title, setTitle] = useState('');
+      const [content, setContent] = useState('');
+      const [formError, setFormError] = useState('');
+      const isFirstRender = useRef(true);
+
+      // Persist to localStorage whenever todos change (skip initial mount)
+      useEffect(() => {
+        if (isFirstRender.current) {
+          isFirstRender.current = false;
+          return;
+        }
+        saveTodos(todos);
+      }, [todos]);
+
+      // Sync across tabs
+      useEffect(() => {
+        function onStorage(e) {
+          if (e.key === STORAGE_KEY) {
+            setTodos(loadTodos());
+          }
+        }
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+      }, []);
+
+      function addTodo(e) {
+        e.preventDefault();
+        const t = title.trim();
+        if (!t) { setFormError('제목을 입력하세요.'); return; }
+        if (todos.some(todo => todo.title === t)) {
+          setFormError('같은 제목의 할 일이 이미 있습니다.');
+          return;
+        }
+        setFormError('');
+        const nextId = todos.length === 0 ? 1 : Math.max(...todos.map(x => x.id)) + 1;
+        const newTodo = {
+          id: nextId,
+          title: t,
+          content: content.trim(),
+          created_at: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        };
+        setTodos(prev => [...prev, newTodo]);
+        setTitle('');
+        setContent('');
+      }
+
+      function deleteTodo(id) {
+        const target = todos.find(x => x.id === id);
+        if (!target) return;
+        if (!confirm(`"${target.title}" 을(를) 삭제할까요?`)) return;
+        setTodos(prev => prev.filter(x => x.id !== id));
+      }
+
+      function saveTodo(id, newContent) {
+        setTodos(prev => prev.map(x => x.id === id ? { ...x, content: newContent } : x));
+      }
+
+      function clearAll() {
+        if (!confirm('모든 할 일을 삭제할까요?')) return;
+        setTodos([]);
+      }
+
+      return (
+        <div className="max-w-xl mx-auto px-4 py-10 sm:py-16">
+          <header className="mb-6 flex items-end justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">💾 할 일 (localStorage)</h1>
+              <p className="text-sm text-slate-500 mt-1">
+                브라우저 저장소 · <Badge color="sky">{todos.length}개</Badge>
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearAll} disabled={todos.length === 0}>
+              전체 비우기
+            </Button>
+          </header>
+
+          <Card className="mb-5">
+            <form onSubmit={addTodo} className="space-y-3">
+              <Input
+                label="제목"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="예: 빨래하기"
+              />
+              <Input
+                label="내용"
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="예: 저녁 먹고 세탁기 돌리기"
+              />
+              {formError && <p className="text-xs text-rose-500">{formError}</p>}
+              <div className="flex justify-end">
+                <Button type="submit" disabled={!title.trim()}>추가</Button>
+              </div>
+            </form>
+          </Card>
+
+          <Card>
+            {todos.length === 0 ? (
+              <div className="text-center text-slate-400 py-10 text-sm">할 일이 없습니다. 위에서 추가해 보세요.</div>
+            ) : (
+              <ul>
+                {todos.map(todo => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onDelete={deleteTodo}
+                    onSave={saveTodo}
+                  />
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <p className="text-center text-xs text-slate-400 mt-6">
+            데이터는 브라우저의 <code className="px-1 bg-slate-100 rounded">localStorage</code> 키 <code className="px-1 bg-slate-100 rounded">{STORAGE_KEY}</code>에 저장됩니다.
+          </p>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🚀 App
+    // ========================================
+
+    function App() {
+      return <TodoApp />;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
