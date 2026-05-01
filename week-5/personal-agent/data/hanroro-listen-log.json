@@ -1,0 +1,64 @@
+{
+  "schema": "hanroro-listen-log v1",
+  "description": "이은찬의 한로로 곡 / 영상 청취 기록. 한로로 워처와 연계되는 개인 감상 DB.",
+  "owner": "이은찬",
+  "last_updated": "2026-05-02",
+  "entries": [
+    {
+      "date": "2026-04-03",
+      "track": "0+0 (자몽살구클럽 라이브)",
+      "context": "독서실 가는 길",
+      "rating": 5,
+      "note": "149만 뷰 라이브. 후렴이 머리에서 안 떠남"
+    },
+    {
+      "date": "2026-04-10",
+      "track": "시간을 달리네 (자몽살구클럽 라이브)",
+      "context": "버스 안",
+      "rating": 5,
+      "note": "이 곡 코드 카피해보고 싶어짐"
+    },
+    {
+      "date": "2026-04-15",
+      "track": "ㅈㅣㅂ",
+      "context": "자기 전",
+      "rating": 4,
+      "note": "가사가 무거워서 매일 듣긴 어려움"
+    },
+    {
+      "date": "2026-04-22",
+      "track": "1111 (MV)",
+      "context": "신곡 첫 감상",
+      "rating": 5,
+      "note": "한로로 생일 11/11 의미 곡. MV 영상미 좋음"
+    },
+    {
+      "date": "2026-04-26",
+      "track": "재 (자몽살구클럽 라이브)",
+      "context": "운동하면서",
+      "rating": 4,
+      "note": "BPM 조금 빠른 게 운동에 잘 맞음"
+    },
+    {
+      "date": "2026-04-30",
+      "track": "게임 오버 ? (MV)",
+      "context": "신곡 알림 받자마자",
+      "rating": 5,
+      "note": "MV 4주 만에 516만 뷰. 가사 마음에 듦"
+    },
+    {
+      "date": "2026-05-01",
+      "track": "[DEEP TALK] 한로로 New Single '애증'",
+      "context": "한로로 워처가 알려줌",
+      "rating": 5,
+      "note": "본인이 곡 만든 과정을 직접 설명. 작곡 공부에 도움."
+    }
+  ],
+  "summary": {
+    "total_listens": 7,
+    "favorite_track": "0+0",
+    "most_recent_discovery": "게임 오버 ?",
+    "average_rating": 4.7,
+    "use_for_practice": ["시간을 달리네"]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "budget-app",
+  "version": "1.0.0",
+  "description": "Server + Supabase 기반 가계부 앱 (수입/지출 등록, 카테고리별 합계).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^5.0.0",
+    "pg": "^8.13.0"
+  }
+}

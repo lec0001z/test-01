@@ -1,0 +1,50 @@
+{
+  "schema": "practice-log v1",
+  "description": "이은찬의 작곡 / 음악 연습 기록. 매주 일요일 중심.",
+  "owner": "이은찬",
+  "last_updated": "2026-05-02",
+  "tool": "GarageBand (iPad)",
+  "entries": [
+    {
+      "date": "2026-03-29",
+      "session_min": 40,
+      "what": "기본 코드 진행 — C / Am / F / G 반복 연습",
+      "feeling": "단순한데 손에 익는 느낌",
+      "next": "다른 키로도 옮겨보기"
+    },
+    {
+      "date": "2026-04-05",
+      "session_min": 50,
+      "what": "G 키 코드 진행 + 멜로디 흥얼거리기",
+      "feeling": "코드 위에 멜로디 얹는 게 어색함",
+      "next": "한 마디만이라도 녹음해보기"
+    },
+    {
+      "date": "2026-04-12",
+      "session_min": 60,
+      "what": "한로로 '시간을 달리네' 코드 카피 시도",
+      "feeling": "전조 부분이 안 잡힘. 변화구 코드 어려움",
+      "next": "유튜브 코드 영상 참고"
+    },
+    {
+      "date": "2026-04-19",
+      "session_min": 75,
+      "what": "'시간을 달리네' 1절 카피 완성 + 직접 만든 멜로디 4마디 녹음",
+      "feeling": "처음으로 '내 곡' 비스무리한 게 나옴",
+      "next": "B파트 코드 정해서 이어가기"
+    },
+    {
+      "date": "2026-04-26",
+      "session_min": 60,
+      "what": "B파트 시도 — Am → Dm → G → Em7 (불확실)",
+      "feeling": "A보다 B가 안 풀림. 일주일 묵혀두기로",
+      "next": "다음 일요일에 fresh한 귀로 다시 듣기"
+    }
+  ],
+  "summary": {
+    "total_sessions": 5,
+    "total_minutes": 285,
+    "current_song": "(가제) 무제 1번",
+    "blocker": "B파트 코드 진행이 안 잡힘"
+  }
+}

@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream-50: #fbf6ee;
+  --color-cream-100: #f5ecdc;
+  --color-cream-200: #ebdec5;
+  --color-sepia-300: #c8a87a;
+  --color-sepia-500: #a87f4e;
+  --color-sepia-700: #6e4d2a;
+  --color-coffee-900: #2d1f0f;
+  --color-terracotta: #c97a4a;
+  --color-terracotta-dark: #a85f33;
+
+  --font-display: Georgia, "Iowan Old Style", "Apple Garamond", serif;
+}
+
+html, body {
+  background: var(--color-cream-50);
+  color: var(--color-coffee-900);
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Pretendard", "Noto Sans KR", sans-serif;
+  font-feature-settings: "ss01", "cv11";
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* subtle paper texture vibe via gradient */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(200, 168, 122, 0.18), transparent 60%),
+    radial-gradient(900px 600px at 110% 110%, rgba(168, 127, 78, 0.12), transparent 60%);
+  z-index: -1;
+}

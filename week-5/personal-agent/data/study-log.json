@@ -1,0 +1,69 @@
+{
+  "schema": "study-log v1",
+  "description": "이은찬의 강의 / 학습 진도 기록. 강의 N주차 퀘스트와 자율 학습을 모두 포함.",
+  "owner": "이은찬",
+  "last_updated": "2026-05-02",
+  "entries": [
+    {
+      "date": "2026-04-04",
+      "week": 1,
+      "topic": "Claude Code 기본",
+      "quest": "환영 페이지 만들기 + slash command 사용법",
+      "status": "completed",
+      "duration_min": 90,
+      "note": "처음으로 Claude Code를 켜본 날. 명령어 입력 → 파일 생성 흐름이 신기했음."
+    },
+    {
+      "date": "2026-04-11",
+      "week": 2,
+      "topic": "AI 멘탈 챗봇 / 닉네임 생성기",
+      "quest": "mental-chat, nickname-creater 만들기",
+      "status": "completed",
+      "duration_min": 120,
+      "note": "프롬프트만 잘 짜면 한 시간 안에 챗봇 1개가 만들어진다는 게 인상적."
+    },
+    {
+      "date": "2026-04-18",
+      "week": 3,
+      "topic": "외부 API 연동 (포켓몬, 날씨, NASA APOD)",
+      "quest": "API 호출 → 화면에 표시",
+      "status": "completed",
+      "duration_min": 150,
+      "note": "API 키 관리·CORS 처음 만남. .env 가 왜 필요한지 체감."
+    },
+    {
+      "date": "2026-04-25",
+      "week": 4,
+      "topic": "익명 게시판 / 냉장고 레시피 / TODO 앱",
+      "quest": "데이터 영속 (DB / JSON 파일)",
+      "status": "completed",
+      "duration_min": 180,
+      "note": "냉장고 레시피 스킬을 직접 만들어 등록 — 슬래시 명령어로 호출되는 게 만족스러움."
+    },
+    {
+      "date": "2026-05-01",
+      "week": 5,
+      "topic": "MCP (Notion / Chrome) + 자동화 에이전트",
+      "quest": "Notion AI 비서 + Chrome 자동 리서치 (한로로 워처)",
+      "status": "completed",
+      "duration_min": 240,
+      "note": "MCP가 진짜 게임 체인저. 한 문장 명령으로 노션 페이지 자동 생성·업데이트되는 게 인상적."
+    },
+    {
+      "date": "2026-05-02",
+      "week": 5,
+      "topic": "AI Context + DB 결합 에이전트",
+      "quest": "personal-agent (지금 만드는 것)",
+      "status": "in_progress",
+      "duration_min": 0,
+      "note": "Context 파일 + DB JSON 둘 다 읽어 맞춤형 답변하는 에이전트를 직접 구성 중."
+    }
+  ],
+  "summary": {
+    "total_weeks_completed": 4,
+    "current_week": 5,
+    "total_minutes": 780,
+    "favorite_topic": "MCP / 자동화",
+    "weakest_topic": "DB 스키마 설계 (todo-app PostgreSQL)"
+  }
+}
