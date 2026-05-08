@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이미지 업로드 테스트</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useCallback } = React;
+
+    // ========================================
+    // 🎨 Design System Components
+    // ========================================
+
+    function Button({ variant = 'primary', size = 'md', disabled, onClick, className = '', children, type = 'button' }) {
+      const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+      const variants = {
+        primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+        secondary: 'bg-slate-200 text-slate-800 hover:bg-slate-300 focus:ring-slate-400',
+        danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+        ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 focus:ring-slate-300'
+      };
+      const sizes = {
+        sm: 'px-3 py-1.5 text-sm',
+        md: 'px-4 py-2 text-sm',
+        lg: 'px-5 py-2.5 text-base'
+      };
+      return (
+        <button
+          type={type}
+          onClick={onClick}
+          disabled={disabled}
+          className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    function Card({ className = '', children }) {
+      return (
+        <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 ${className}`}>
+          {children}
+        </div>
+      );
+    }
+
+    function Badge({ variant = 'default', children }) {
+      const variants = {
+        default: 'bg-slate-100 text-slate-700',
+        success: 'bg-green-100 text-green-700',
+        error: 'bg-red-100 text-red-700',
+        info: 'bg-blue-100 text-blue-700'
+      };
+      return (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${variants[variant]}`}>
+          {children}
+        </span>
+      );
+    }
+
+    // ========================================
+    // 🛠️ Utilities
+    // ========================================
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+
+    // ========================================
+    // 📄 Page Components
+    // ========================================
+
+    function UploadZone({ onFile, isDragging, setIsDragging, disabled }) {
+      const inputRef = useRef(null);
+
+      const handleDragOver = (e) => {
+        e.preventDefault();
+        if (!disabled) setIsDragging(true);
+      };
+
+      const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+      };
+
+      const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (disabled) return;
+        const file = e.dataTransfer.files?.[0];
+        if (file) onFile(file);
+      };
+
+      const handleSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (file) onFile(file);
+        e.target.value = '';
+      };
+
+      return (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => !disabled && inputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          aria-label="이미지 업로드 영역"
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+              e.preventDefault();
+              inputRef.current?.click();
+            }
+          }}
+          className={`
+            cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition-all
+            ${isDragging
+              ? 'border-blue-500 bg-blue-50 scale-[1.01]'
+              : 'border-slate-300 bg-slate-50 hover:border-blue-400 hover:bg-blue-50/40'}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleSelect}
+            className="hidden"
+            disabled={disabled}
+          />
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl">
+              ⬆
+            </div>
+            <div>
+              <p className="text-base font-semibold text-slate-800">
+                {isDragging ? '여기에 놓아주세요' : '이미지를 드래그하거나 클릭하세요'}
+              </p>
+              <p className="text-sm text-slate-500 mt-1">
+                JPG, PNG, GIF, WEBP, SVG · 최대 5MB
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function PreviewPanel({ file, previewUrl, onRemove, onUpload, uploadState, uploadResult, uploadError }) {
+      const isUploading = uploadState === 'uploading';
+      const isSuccess = uploadState === 'success';
+      const isError = uploadState === 'error';
+
+      const badge = isSuccess
+        ? <Badge variant="success">업로드 완료</Badge>
+        : isUploading
+          ? <Badge variant="info">업로드 중…</Badge>
+          : isError
+            ? <Badge variant="error">실패</Badge>
+            : <Badge variant="default">대기</Badge>;
+
+      const copyUrl = async () => {
+        if (!uploadResult?.url) return;
+        try {
+          await navigator.clipboard.writeText(uploadResult.url);
+        } catch {}
+      };
+
+      return (
+        <Card className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-slate-800">미리보기</h3>
+            {badge}
+          </div>
+
+          <div className="relative bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center" style={{ minHeight: '240px' }}>
+            <img
+              src={isSuccess && uploadResult?.url ? uploadResult.url : previewUrl}
+              alt={file.name}
+              className="max-h-[420px] w-auto object-contain"
+            />
+          </div>
+
+          <dl className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div>
+              <dt className="text-slate-500">파일명</dt>
+              <dd className="text-slate-800 font-medium truncate" title={file.name}>{file.name}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">크기</dt>
+              <dd className="text-slate-800 font-medium">{formatBytes(file.size)}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">타입</dt>
+              <dd className="text-slate-800 font-medium">{file.type || '알 수 없음'}</dd>
+            </div>
+          </dl>
+
+          {isSuccess && uploadResult && (
+            <div className="mt-5 rounded-lg bg-green-50 border border-green-200 p-3 text-sm">
+              <div className="text-green-800 font-medium mb-1">ImageKit URL</div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={uploadResult.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 truncate text-blue-700 hover:underline"
+                  title={uploadResult.url}
+                >
+                  {uploadResult.url}
+                </a>
+                <Button variant="secondary" size="sm" onClick={copyUrl}>복사</Button>
+              </div>
+              {(uploadResult.width || uploadResult.height) && (
+                <div className="text-green-700 text-xs mt-2">
+                  {uploadResult.width} × {uploadResult.height}px · {formatBytes(uploadResult.size || 0)}
+                </div>
+              )}
+            </div>
+          )}
+
+          {isError && uploadError && (
+            <div role="alert" className="mt-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              업로드 실패: {uploadError}
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-wrap gap-2 justify-end">
+            <Button variant="ghost" size="sm" onClick={onRemove} disabled={isUploading}>
+              삭제
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onUpload}
+              disabled={isUploading || isSuccess}
+            >
+              {isUploading ? '업로드 중…' : isSuccess ? '업로드 완료' : 'ImageKit에 업로드'}
+            </Button>
+          </div>
+        </Card>
+      );
+    }
+
+    function ImageUploadPage() {
+      const [file, setFile] = useState(null);
+      const [previewUrl, setPreviewUrl] = useState(null);
+      const [isDragging, setIsDragging] = useState(false);
+      const [error, setError] = useState(null);
+      const [uploadState, setUploadState] = useState('idle'); // idle | uploading | success | error
+      const [uploadResult, setUploadResult] = useState(null);
+      const [uploadError, setUploadError] = useState(null);
+
+      const validate = useCallback((f) => {
+        if (!ACCEPTED_TYPES.includes(f.type)) {
+          return '지원하지 않는 형식입니다. (JPG, PNG, GIF, WEBP, SVG)';
+        }
+        if (f.size > MAX_SIZE) {
+          return `파일이 너무 큽니다. (최대 ${formatBytes(MAX_SIZE)})`;
+        }
+        return null;
+      }, []);
+
+      const handleFile = useCallback((f) => {
+        setError(null);
+        const errMsg = validate(f);
+        if (errMsg) {
+          setError(errMsg);
+          return;
+        }
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setFile(f);
+        setPreviewUrl(URL.createObjectURL(f));
+        setUploadState('idle');
+        setUploadResult(null);
+        setUploadError(null);
+      }, [previewUrl, validate]);
+
+      const handleRemove = useCallback(() => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setFile(null);
+        setPreviewUrl(null);
+        setError(null);
+        setUploadState('idle');
+        setUploadResult(null);
+        setUploadError(null);
+      }, [previewUrl]);
+
+      const handleUpload = useCallback(async () => {
+        if (!file) return;
+        setUploadState('uploading');
+        setUploadError(null);
+        setUploadResult(null);
+        try {
+          const fd = new FormData();
+          fd.append('file', file);
+          const res = await fetch('/api/upload', { method: 'POST', body: fd });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            throw new Error(json.message || `HTTP ${res.status}`);
+          }
+          setUploadResult(json.data);
+          setUploadState('success');
+        } catch (err) {
+          setUploadError(err.message || '알 수 없는 오류');
+          setUploadState('error');
+        }
+      }, [file]);
+
+      return (
+        <div className="max-w-3xl mx-auto px-4 py-10">
+          <header className="mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">이미지 업로드 테스트</h1>
+            <p className="text-slate-600 mt-1 text-sm">드래그앤드롭 또는 파일 선택으로 이미지를 업로드해 보세요.</p>
+          </header>
+
+          <div className="space-y-6">
+            <UploadZone
+              onFile={handleFile}
+              isDragging={isDragging}
+              setIsDragging={setIsDragging}
+              disabled={false}
+            />
+
+            {error && (
+              <div role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
+                <span className="font-bold">!</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            {file && previewUrl ? (
+              <PreviewPanel
+                file={file}
+                previewUrl={previewUrl}
+                onRemove={handleRemove}
+                onUpload={handleUpload}
+                uploadState={uploadState}
+                uploadResult={uploadResult}
+                uploadError={uploadError}
+              />
+            ) : (
+              <Card className="p-8 text-center text-slate-400 text-sm">
+                아직 업로드된 이미지가 없습니다.
+              </Card>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ========================================
+    // 🚀 App
+    // ========================================
+
+    function App() {
+      return <ImageUploadPage />;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

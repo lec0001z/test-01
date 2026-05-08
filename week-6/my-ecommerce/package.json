@@ -1,0 +1,17 @@
+{
+  "name": "my-ecommerce",
+  "version": "1.0.0",
+  "private": true,
+  "description": "도담 — 손으로 빚은 도자기 쇼핑몰 (Toss Payments 연동)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
