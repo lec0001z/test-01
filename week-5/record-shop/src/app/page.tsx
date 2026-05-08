@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Product } from "@/lib/types";
 import ProductCard from "@/components/ProductCard";
@@ -8,22 +9,44 @@ export default async function Home() {
   const supabase = await createClient();
 
   const [{ data: products, error }, { data: { user } }] = await Promise.all([
-    supabase.from("products").select("*").order("created_at", { ascending: true }),
+    supabase
+      .from("products")
+      .select("*")
+      .eq("sold", false)
+      .order("created_at", { ascending: false }),
     supabase.auth.getUser(),
   ]);
 
   return (
     <div>
-      <section className="pt-12 pb-10">
-        <p className="text-sm uppercase tracking-[0.2em] text-sepia-500">indie · korea</p>
-        <h1 className="font-display mt-3 text-4xl leading-tight text-coffee-900 sm:text-5xl">
-          귀로 만지는 따뜻한 한 장,
-          <br />
-          <span className="text-terracotta-dark">한국 인디 LP &amp; CD</span>
-        </h1>
-        <p className="mt-4 max-w-xl text-sepia-700">
-          작은 음반샵 Groove &amp; Vinyl 에서 큐레이션한 한국 인디 음반. 검정치마부터 한로로, 실리카겔까지.
-        </p>
+      <section className="flex flex-wrap items-end justify-between gap-4 pt-12 pb-10">
+        <div>
+          <p className="text-sm uppercase tracking-[0.2em] text-sepia-500">indie · korea · resale</p>
+          <h1 className="font-display mt-3 text-4xl leading-tight text-coffee-900 sm:text-5xl">
+            귀로 만지는 따뜻한 한 장,
+            <br />
+            <span className="text-terracotta-dark">한국 인디 LP &amp; CD</span>
+          </h1>
+          <p className="mt-4 max-w-xl text-sepia-700">
+            소장하던 음반을 다른 사람에게 넘기고, 다른 사람이 올린 음반을 사기도 하는 작은 중고 음반샵.
+            한로로, 잔나비, 검정치마, 실리카겔 같은 한국 인디를 모았어요.
+          </p>
+        </div>
+        {user ? (
+          <Link
+            href="/sell"
+            className="rounded-full bg-coffee-900 px-5 py-2.5 text-sm font-medium text-cream-50 transition hover:bg-sepia-700"
+          >
+            ＋ 내 음반 판매하기
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="rounded-full border border-coffee-900 px-5 py-2.5 text-sm font-medium text-coffee-900 transition hover:bg-coffee-900 hover:text-cream-50"
+          >
+            로그인하고 판매하기
+          </Link>
+        )}
       </section>
 
       {error ? (
@@ -40,7 +63,12 @@ export default async function Home() {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {(products as Product[]).map((p) => (
-            <ProductCard key={p.id} product={p} isLoggedIn={!!user} />
+            <ProductCard
+              key={p.id}
+              product={p}
+              isLoggedIn={!!user}
+              isOwn={!!user && p.seller_id === user.id}
+            />
           ))}
         </div>
       )}

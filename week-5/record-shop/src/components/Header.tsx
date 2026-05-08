@@ -19,7 +19,7 @@ export default async function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-cream-200 bg-cream-50/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4">
         <Link href="/" className="flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-coffee-900 text-cream-50">
             <span className="block h-2 w-2 rounded-full bg-cream-50" />
@@ -27,7 +27,24 @@ export default async function Header() {
           <span className="font-display text-xl tracking-tight">Groove &amp; Vinyl</span>
         </Link>
 
-        <nav className="flex items-center gap-3 text-sm">
+        <nav className="flex items-center gap-2 text-sm">
+          {user ? (
+            <>
+              <Link
+                href="/sell"
+                className="hidden rounded-full border border-coffee-900 px-4 py-2 text-coffee-900 transition hover:bg-coffee-900 hover:text-cream-50 sm:inline-block"
+              >
+                판매하기
+              </Link>
+              <Link
+                href="/mypage"
+                className="rounded-full border border-cream-200 px-4 py-2 text-coffee-900 transition hover:bg-white"
+              >
+                마이페이지
+              </Link>
+            </>
+          ) : null}
+
           <Link
             href="/cart"
             className="relative rounded-full border border-cream-200 px-4 py-2 text-coffee-900 transition hover:bg-white"

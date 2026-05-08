@@ -78,16 +78,14 @@ export default async function CartPage() {
               </span>
             </div>
 
-            <button
-              type="button"
-              disabled
-              title="이번 과제 범위에는 결제 기능이 포함되지 않아요"
-              className="mt-6 w-full rounded-xl bg-coffee-900/40 py-3 text-sm font-medium text-cream-50 disabled:cursor-not-allowed"
+            <Link
+              href="/checkout"
+              className="mt-6 block w-full rounded-xl bg-coffee-900 py-3 text-center text-sm font-medium text-cream-50 transition hover:bg-sepia-700"
             >
-              결제하기 (비활성)
-            </button>
+              결제하기
+            </Link>
             <p className="mt-2 text-center text-xs text-sepia-500">
-              과제 범위: 결제 기능은 포함되지 않습니다.
+              토스페이먼츠 테스트 결제 (실제 청구되지 않아요)
             </p>
           </aside>
         </div>
