@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>기리고 — If Wishes Could Kill | 포스터</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- noonnu.cc 웹폰트 -->
+  <style>
+    /* 양진체 — 메인 포스터 헤드라인 */
+    @font-face {
+      font-family: 'Yangjin';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/Yangjin.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    /* 어그로체 B — 디지털 호러 포스터 */
+    @font-face {
+      font-family: 'SBAggroB';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2304-1@1.0/SB-AggroOTF-B.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'SBAggroL';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2304-1@1.0/SB-AggroOTF-L.woff2') format('woff2');
+      font-weight: 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    /* KCC 간판체 — 무당/오리진 빈티지 */
+    @font-face {
+      font-family: 'KCCGanpan';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2206-02@1.1/KCC-Ganpan.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    /* EF Diary — 손글씨 부적 */
+    @font-face {
+      font-family: 'EFDiary';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/EF_Diary.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    /* 카페24 둥근모꼴 — 보조 정보 */
+    @font-face {
+      font-family: 'Cafe24Ssurround';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2104_2@1.0/Cafe24Ssurround.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+    :root {
+      --pretendard: 'Pretendard Variable', -apple-system, sans-serif;
+    }
+
+    body {
+      background: #050507;
+      font-family: var(--pretendard);
+      color: #f5f5f5;
+      margin: 0;
+    }
+
+    /* Font helper classes */
+    .f-yangjin { font-family: 'Yangjin', sans-serif; }
+    .f-aggro-b { font-family: 'SBAggroB', sans-serif; font-weight: 700; }
+    .f-aggro-l { font-family: 'SBAggroL', sans-serif; font-weight: 300; }
+    .f-ganpan  { font-family: 'KCCGanpan', serif; }
+    .f-diary   { font-family: 'EFDiary', sans-serif; }
+    .f-ssur    { font-family: 'Cafe24Ssurround', sans-serif; }
+    .f-mono    { font-family: 'JetBrains Mono', monospace; }
+
+    /* Film grain */
+    .grain::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      opacity: 0.22;
+      pointer-events: none;
+    }
+
+    .vignette {
+      background: radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.95) 100%);
+    }
+
+    /* Vertical Korean text */
+    .vert-rl { writing-mode: vertical-rl; text-orientation: mixed; }
+
+    /* Shake/glitch */
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-1px, 1px); }
+      40% { transform: translate(1px, -1px); }
+      60% { transform: translate(-1px, 0); }
+      80% { transform: translate(1px, 1px); }
+    }
+    .glitch:hover { animation: glitch 0.4s steps(1) infinite; }
+
+    /* Flicker */
+    @keyframes flicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+      20%, 24%, 55% { opacity: 0.4; }
+    }
+    .flicker { animation: flicker 5s infinite; }
+
+    /* Red glow text */
+    .glow-red {
+      text-shadow:
+        0 0 12px rgba(255, 21, 0, 0.45),
+        0 0 32px rgba(176, 0, 15, 0.55);
+    }
+    .glow-red-strong {
+      text-shadow:
+        0 0 8px rgba(255, 21, 0, 0.95),
+        0 0 24px rgba(255, 21, 0, 0.7),
+        0 0 60px rgba(176, 0, 15, 0.55);
+    }
+
+    /* 부적 배경 텍스처 */
+    .talisman-bg {
+      background-image:
+        repeating-linear-gradient(0deg, rgba(255,0,0,0.05) 0 1px, transparent 1px 60px),
+        repeating-linear-gradient(90deg, rgba(255,0,0,0.05) 0 1px, transparent 1px 60px);
+    }
+
+    /* RGB split for glitch poster */
+    .rgb-split {
+      text-shadow:
+        2px 0 rgba(255, 0, 0, 0.7),
+        -2px 0 rgba(0, 200, 255, 0.6);
+    }
+
+    /* Print: each poster on own page */
+    @media print {
+      body { background: white; }
+      .print-page { page-break-after: always; }
+      .no-print { display: none; }
+    }
+
+    /* Stack scroll snap */
+    .stack {
+      scroll-snap-type: y mandatory;
+    }
+    .poster-section {
+      scroll-snap-align: start;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ========================================
+    // ⏱ Live Countdown
+    // ========================================
+    function Countdown({ className = '' }) {
+      const [time, setTime] = useState({ h: 23, m: 59, s: 59 });
+      useEffect(() => {
+        const id = setInterval(() => {
+          setTime(({ h, m, s }) => {
+            s -= 1;
+            if (s < 0) { s = 59; m -= 1; }
+            if (m < 0) { m = 59; h -= 1; }
+            if (h < 0) return { h: 23, m: 59, s: 59 };
+            return { h, m, s };
+          });
+        }, 1000);
+        return () => clearInterval(id);
+      }, []);
+      const pad = (n) => String(n).padStart(2, '0');
+      return (
+        <span className={`f-mono ${className}`}>
+          {pad(time.h)}:{pad(time.m)}:{pad(time.s)}
+        </span>
+      );
+    }
+
+    // ========================================
+    // 📜 Poster 1 — 메인 키 아트 (양진체)
+    // ========================================
+    function PosterMain() {
+      return (
+        <article
+          className="relative w-full max-w-[680px] mx-auto bg-black overflow-hidden grain shadow-[0_0_60px_rgba(255,0,0,0.15)]"
+          style={{ aspectRatio: '2 / 3' }}
+        >
+          {/* 배경 이미지 */}
+          <img
+            src="stills/still-01.jpg"
+            alt="서린고 5인방"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: 'contrast(1.1) saturate(0.85) brightness(0.78)' }}
+          />
+
+          {/* 붉은 컬러 그레이딩 */}
+          <div
+            className="absolute inset-0 mix-blend-multiply"
+            style={{
+              background: 'linear-gradient(180deg, rgba(20,8,15,0.5) 0%, rgba(80,5,15,0.35) 45%, rgba(0,0,0,0.95) 100%)'
+            }}
+          />
+          <div className="absolute inset-0 vignette pointer-events-none" />
+
+          {/* 상단: 넷플릭스 스트립 */}
+          <div className="absolute top-0 left-0 right-0 px-5 pt-5 flex items-center justify-between">
+            <div className="f-mono text-[9px] tracking-[0.45em] text-red-500/90 uppercase">
+              <span className="text-white">N</span> NETFLIX SERIES
+            </div>
+            <div className="f-mono text-[9px] tracking-[0.4em] text-zinc-300 uppercase">
+              ONLY ON NETFLIX
+            </div>
+          </div>
+
+          {/* 카운트다운 (좌상) */}
+          <div className="absolute top-14 left-5 border border-red-700/60 px-2 py-1 bg-black/40 backdrop-blur-sm">
+            <Countdown className="text-red-500 text-[11px] tracking-widest" />
+          </div>
+
+          {/* 태그라인 */}
+          <div className="absolute left-0 right-0 px-6" style={{ top: '52%' }}>
+            <p className="f-ssur text-center text-white/90 text-sm sm:text-base tracking-[0.3em] glow-red">
+              소원이 이뤄진 순간,
+            </p>
+            <p className="f-ssur text-center text-red-400 text-sm sm:text-base tracking-[0.3em] mt-1 glow-red">
+              24시간이 시작된다.
+            </p>
+          </div>
+
+          {/* 메인 타이틀 */}
+          <div className="absolute left-0 right-0 px-4 text-center" style={{ top: '63%' }}>
+            <h1
+              className="f-yangjin text-white leading-[0.85] glow-red-strong"
+              style={{ fontSize: 'clamp(80px, 18vw, 180px)' }}
+            >
+              기리고
+            </h1>
+            <p className="f-aggro-l text-zinc-300 tracking-[0.5em] text-[10px] sm:text-xs mt-2 uppercase">
+              IF · WISHES · COULD · KILL
+            </p>
+          </div>
+
+          {/* 카피 박스 */}
+          <div className="absolute left-0 right-0 text-center px-6" style={{ top: '82%' }}>
+            <p className="f-yangjin text-red-500 text-xl sm:text-2xl glow-red-strong tracking-tight">
+              넌 있어?
+            </p>
+            <p className="f-yangjin text-white text-lg sm:text-xl glow-red leading-tight mt-1">
+              죽도록 빌고 싶은 소원.
+            </p>
+          </div>
+
+          {/* 하단 크레딧 블록 */}
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 pt-6 bg-gradient-to-t from-black via-black/85 to-transparent">
+            <div className="text-center">
+              <p className="f-aggro-b text-white text-xs sm:text-sm tracking-[0.18em] mb-1.5">
+                전소영 · 강미나 · 백선호 · 현우석 · 이효제
+              </p>
+              <p className="f-mono text-[8px] tracking-[0.35em] text-zinc-400 uppercase mb-2">
+                전소니 · 노재원 · 김시아 · 최주은
+              </p>
+              <div className="border-t border-red-900/50 pt-2">
+                <p className="f-mono text-[8px] tracking-[0.4em] text-zinc-500 uppercase">
+                  연출 박윤서 · 각본 박중섭 · 음악 강네네
+                </p>
+                <p className="f-aggro-b text-red-500 text-base sm:text-lg tracking-[0.25em] mt-1.5 glow-red">
+                  2026 · 04 · 24
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    // ========================================
+    // 📜 Poster 2 — 붉은 폰 (어그로체 / 디지털 호러)
+    // ========================================
+    function PosterPhone() {
+      return (
+        <article
+          className="relative w-full max-w-[680px] mx-auto bg-black overflow-hidden grain shadow-[0_0_60px_rgba(255,0,0,0.2)]"
+          style={{ aspectRatio: '2 / 3' }}
+        >
+          <img
+            src="stills/still-04.jpg"
+            alt="붉은 폰"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: 'contrast(1.2) saturate(0.7) brightness(0.7)', objectPosition: 'right' }}
+          />
+
+          <div
+            className="absolute inset-0 mix-blend-multiply"
+            style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(80,0,10,0.55) 50%, rgba(20,0,5,0.85) 100%)' }}
+          />
+          <div className="absolute inset-0 vignette pointer-events-none" />
+
+          {/* 상단 좌: 앱 아이콘 + 알림 */}
+          <div className="absolute top-5 left-5 right-5 flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-red-700 border border-red-400/50 flex items-center justify-center f-yangjin text-white text-xl glow-red-strong">
+                祈
+              </div>
+              <div>
+                <p className="f-aggro-b text-white text-[11px] tracking-[0.15em] leading-tight">기리고</p>
+                <p className="f-mono text-[8px] tracking-[0.25em] text-red-400">WISH SENT · 1m ago</p>
+              </div>
+            </div>
+            <div className="border border-red-700/60 px-2 py-1 bg-black/60 text-right">
+              <p className="f-mono text-[8px] tracking-[0.3em] text-zinc-400 uppercase">DEATH IN</p>
+              <Countdown className="text-red-500 text-base font-bold tracking-tight" />
+            </div>
+          </div>
+
+          {/* 가운데: 타이틀 */}
+          <div className="absolute left-0 right-0 px-5" style={{ top: '34%' }}>
+            <p className="f-aggro-l text-zinc-300 text-[10px] sm:text-xs tracking-[0.55em] mb-3 uppercase rgb-split">
+              CHAPTER · IV
+            </p>
+            <h1 className="f-aggro-b text-white leading-[0.88] glow-red-strong tracking-tight glitch"
+                style={{ fontSize: 'clamp(60px, 14vw, 140px)' }}>
+              붉은 폰
+            </h1>
+            <h2 className="f-aggro-l text-red-500 mt-1 tracking-[0.18em] glow-red"
+                style={{ fontSize: 'clamp(20px, 4vw, 38px)' }}>
+              THE CURSED DEVICE
+            </h2>
+          </div>
+
+          {/* 카피 박스 */}
+          <div className="absolute left-5 right-5 border-l-2 border-red-600 pl-3" style={{ top: '60%' }}>
+            <p className="f-aggro-b text-white text-lg sm:text-xl leading-tight glow-red">
+              버튼 한 번에,
+            </p>
+            <p className="f-aggro-b text-red-500 text-lg sm:text-xl leading-tight glow-red-strong">
+              모든 게 끝난다.
+            </p>
+            <p className="f-aggro-l text-zinc-400 text-[11px] tracking-[0.2em] mt-2 uppercase">
+              ONE TAP. ONE LIFE. NO TAKE-BACK.
+            </p>
+          </div>
+
+          {/* 앱의 규칙 미니 인포그래픽 */}
+          <div className="absolute left-5 right-5" style={{ top: '74%' }}>
+            <div className="grid grid-cols-3 gap-1.5 f-mono text-[9px]">
+              {[
+                { n: '01', t: '셀카' },
+                { n: '02', t: '소원' },
+                { n: '03', t: '24시' },
+              ].map((s) => (
+                <div key={s.n} className="border border-red-900/50 bg-black/50 px-2 py-1.5 text-center backdrop-blur-sm">
+                  <span className="text-red-500 tracking-[0.2em]">{s.n}</span>
+                  <span className="text-zinc-300 ml-1.5 f-aggro-b">{s.t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 하단 크레딧 */}
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 pt-8 bg-gradient-to-t from-black via-black/90 to-transparent">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="f-aggro-b text-white text-[10px] tracking-[0.18em] leading-tight">
+                  주연 백선호 · 최주은
+                </p>
+                <p className="f-mono text-[8px] tracking-[0.3em] text-zinc-500 uppercase mt-0.5">
+                  EP.04 — THE CURSED DEVICE
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="f-aggro-l text-red-500 text-[9px] tracking-[0.4em] uppercase">NOW STREAMING</p>
+                <p className="f-aggro-b text-white text-base tracking-[0.18em] glow-red">04 · 24 · 26</p>
+              </div>
+            </div>
+            <div className="border-t border-red-900/40 mt-2 pt-1.5 text-center">
+              <p className="f-mono text-[7px] tracking-[0.4em] text-zinc-500 uppercase">
+                NETFLIX · CJ ENM STUDIOS · KAIROS MAKERS
+              </p>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    // ========================================
+    // 📜 Poster 3 — 도혜령 / 무당 (KCC간판 + EF다이어리)
+    // ========================================
+    function PosterShaman() {
+      return (
+        <article
+          className="relative w-full max-w-[680px] mx-auto bg-black overflow-hidden grain shadow-[0_0_60px_rgba(80,0,15,0.3)]"
+          style={{ aspectRatio: '2 / 3' }}
+        >
+          <img
+            src="stills/still-15.jpg"
+            alt="도혜령"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: 'contrast(1.15) saturate(0.6) brightness(0.7) hue-rotate(-10deg)' }}
+          />
+
+          <div
+            className="absolute inset-0 mix-blend-multiply"
+            style={{ background: 'linear-gradient(180deg, rgba(0,15,30,0.5) 0%, rgba(0,30,50,0.4) 45%, rgba(40,0,10,0.85) 100%)' }}
+          />
+          <div className="absolute inset-0 vignette pointer-events-none" />
+
+          {/* 부적 그리드 오버레이 */}
+          <div className="absolute inset-0 talisman-bg opacity-30 pointer-events-none" />
+
+          {/* 우측 세로 한자 라벨 */}
+          <div className="absolute top-5 right-5 vert-rl f-ganpan text-red-500/90 text-2xl sm:text-3xl tracking-[0.4em] glow-red flicker">
+            祈 · 願 · 死
+          </div>
+
+          {/* 좌상 부적 박스 */}
+          <div className="absolute top-5 left-5 border-2 border-red-600/80 bg-red-950/30 backdrop-blur-sm px-2.5 py-2 text-center max-w-[110px]">
+            <p className="f-diary text-red-400 text-[9px] tracking-[0.2em] leading-tight">
+              急急如律令
+            </p>
+            <div className="border-t border-red-700/60 my-1" />
+            <p className="f-mono text-[8px] tracking-[0.3em] text-red-300">
+              EP.06 — 2022
+            </p>
+          </div>
+
+          {/* 가운데 타이틀 (가로형 — 큰 한국어) */}
+          <div className="absolute left-0 right-0 text-center px-6" style={{ top: '46%' }}>
+            <p className="f-diary text-red-300 text-sm sm:text-base tracking-[0.3em] mb-3 flicker">
+              ✦  무당의 의식  ✦
+            </p>
+            <h1 className="f-ganpan text-white leading-[0.9] glow-red-strong"
+                style={{ fontSize: 'clamp(70px, 16vw, 160px)' }}>
+              도혜령
+            </h1>
+            <p className="f-aggro-l text-zinc-300 text-xs sm:text-sm tracking-[0.45em] mt-3 uppercase">
+              THE FIRST WISH
+            </p>
+          </div>
+
+          {/* 손글씨 카피 (부적 톤) */}
+          <div className="absolute left-0 right-0 text-center px-6" style={{ top: '70%' }}>
+            <p className="f-diary text-white text-2xl sm:text-3xl leading-snug glow-red">
+              누군가의 소원은,
+            </p>
+            <p className="f-diary text-red-500 text-2xl sm:text-3xl leading-snug glow-red-strong">
+              누군가의 죽음.
+            </p>
+          </div>
+
+          {/* 카운트다운 — 부적 스타일 */}
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-32 sm:bottom-36 border border-red-600/70 bg-black/60 backdrop-blur-sm px-4 py-1.5">
+            <p className="f-mono text-[8px] tracking-[0.4em] text-red-400 uppercase mb-0.5 text-center">시한부</p>
+            <Countdown className="text-red-500 text-lg tracking-widest" />
+          </div>
+
+          {/* 하단 크레딧 */}
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 pt-8 bg-gradient-to-t from-black via-black/90 to-transparent">
+            <div className="text-center">
+              <p className="f-ganpan text-white text-sm sm:text-base tracking-[0.2em] mb-1">
+                김시아 · 전소니 · 노재원
+              </p>
+              <p className="f-mono text-[8px] tracking-[0.4em] text-zinc-500 uppercase mb-2">
+                ORIGIN · 2022 · SEORIN H.S.
+              </p>
+              <div className="border-t border-red-900/50 pt-2 flex items-center justify-between">
+                <p className="f-mono text-[8px] tracking-[0.35em] text-zinc-500 uppercase">박윤서 연출</p>
+                <p className="f-ganpan text-red-500 text-base tracking-[0.18em] glow-red">2026.04.24</p>
+                <p className="f-mono text-[8px] tracking-[0.35em] text-zinc-500 uppercase">NETFLIX</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    // ========================================
+    // 🚀 App
+    // ========================================
+    function App() {
+      return (
+        <div className="min-h-screen">
+          {/* 작은 상단 라벨 (인쇄 시 숨김) */}
+          <div className="no-print max-w-[720px] mx-auto px-5 pt-6 pb-4 flex items-center justify-between border-b border-zinc-900">
+            <p className="f-aggro-b text-white text-sm tracking-[0.2em]">
+              기리고 <span className="text-red-500">·</span> 포스터
+            </p>
+            <p className="f-mono text-[9px] tracking-[0.4em] text-zinc-500 uppercase">3 SHEETS · A2</p>
+          </div>
+
+          {/* 포스터 3장 — 각자 한 페이지 */}
+          <section className="poster-section print-page py-10 sm:py-14 px-4">
+            <PosterMain />
+          </section>
+          <section className="poster-section print-page py-10 sm:py-14 px-4">
+            <PosterPhone />
+          </section>
+          <section className="poster-section print-page py-10 sm:py-14 px-4">
+            <PosterShaman />
+          </section>
+
+          {/* 폰트 출처 */}
+          <div className="no-print max-w-[720px] mx-auto px-5 py-6 border-t border-zinc-900 text-center">
+            <p className="f-mono text-[9px] tracking-[0.35em] text-zinc-600 uppercase leading-relaxed">
+              FONTS via noonnu.cc<br />
+              양진체 · SB어그로체 · KCC간판체 · EF_Diary · 카페24 둥근모꼴
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
