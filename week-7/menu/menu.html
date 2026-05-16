@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>오후 세시 - Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  @page { size: A4 portrait; margin: 0; }
+
+  :root {
+    --cream:     #F5EDE0;
+    --cream-2:   #EFE4D2;
+    --brown:     #6B4423;
+    --brown-2:   #3E2817;
+    --terra:     #C96F4A;
+    --terra-2:   #A85535;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #d9d2c4;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    color: var(--brown-2);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    height: 297mm;
+    margin: 20px auto;
+    padding: 18mm 16mm 14mm;
+    background: var(--cream);
+    background-image:
+      radial-gradient(circle at 18% 8%, rgba(201,111,74,0.08) 0, transparent 35%),
+      radial-gradient(circle at 88% 92%, rgba(107,68,35,0.10) 0, transparent 40%);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    text-align: center;
+    border-bottom: 1.5px solid var(--brown);
+    padding-bottom: 10mm;
+    margin-bottom: 8mm;
+    position: relative;
+  }
+  .header .stamp {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 10pt;
+    letter-spacing: 0.4em;
+    color: var(--terra);
+    margin-bottom: 4mm;
+    font-weight: 500;
+  }
+  .header h1 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 44pt;
+    font-weight: 900;
+    color: var(--brown-2);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .header .en {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11pt;
+    color: var(--brown);
+    letter-spacing: 0.5em;
+    margin-top: 3mm;
+    font-style: italic;
+    font-weight: 400;
+  }
+  .header .tag {
+    font-size: 9.5pt;
+    color: var(--brown);
+    margin-top: 5mm;
+    letter-spacing: 0.15em;
+    opacity: 0.85;
+  }
+
+  /* ===== SIGNATURE BLOCK ===== */
+  .signature {
+    background: linear-gradient(135deg, var(--terra) 0%, var(--terra-2) 100%);
+    color: var(--cream);
+    padding: 7mm 8mm;
+    border-radius: 3mm;
+    margin-bottom: 8mm;
+    display: grid;
+    grid-template-columns: 28mm 1fr;
+    gap: 6mm;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(168,85,53,0.25);
+    position: relative;
+  }
+  .signature::before {
+    content: 'SIGNATURE';
+    position: absolute;
+    top: -3.2mm;
+    left: 8mm;
+    background: var(--brown-2);
+    color: var(--cream);
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.35em;
+    padding: 1.2mm 4mm;
+    border-radius: 1mm;
+  }
+  .sig-art {
+    width: 28mm;
+    height: 28mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sig-art svg { width: 100%; height: 100%; }
+  .sig-info .label {
+    font-size: 8.5pt;
+    letter-spacing: 0.3em;
+    opacity: 0.85;
+    margin-bottom: 1.5mm;
+  }
+  .sig-info .name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 22pt;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 2mm;
+  }
+  .sig-info .desc {
+    font-size: 9pt;
+    line-height: 1.55;
+    opacity: 0.95;
+    margin-bottom: 3mm;
+    max-width: 90mm;
+  }
+  .sig-info .price {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 16pt;
+    font-weight: 700;
+  }
+
+  /* ===== MENU GRID ===== */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6mm 10mm;
+  }
+
+  .category {
+    break-inside: avoid;
+  }
+  .category .cat-head {
+    display: flex;
+    align-items: baseline;
+    gap: 4mm;
+    margin-bottom: 4mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 1px solid var(--brown);
+  }
+  .cat-head .num {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 10pt;
+    color: var(--terra);
+    font-weight: 500;
+    letter-spacing: 0.15em;
+  }
+  .cat-head .ko {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--brown-2);
+    letter-spacing: -0.01em;
+  }
+  .cat-head .en {
+    font-size: 8pt;
+    color: var(--brown);
+    letter-spacing: 0.25em;
+    opacity: 0.7;
+    margin-left: auto;
+    font-style: italic;
+  }
+
+  .item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    column-gap: 3mm;
+    margin-bottom: 3.5mm;
+  }
+  .item .name-wrap .nm {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: var(--brown-2);
+    margin-bottom: 0.5mm;
+  }
+  .item .name-wrap .sub {
+    font-size: 8pt;
+    color: var(--brown);
+    opacity: 0.75;
+    line-height: 1.3;
+  }
+  .item .price {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11pt;
+    color: var(--brown-2);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    position: absolute;
+    bottom: 10mm;
+    left: 16mm;
+    right: 16mm;
+    border-top: 1px solid var(--brown);
+    padding-top: 4mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8.5pt;
+    color: var(--brown);
+    letter-spacing: 0.1em;
+  }
+  .footer .hours { font-weight: 500; }
+  .footer .quote {
+    font-family: 'Noto Serif KR', serif;
+    font-style: italic;
+    font-size: 9pt;
+    color: var(--terra);
+  }
+  .footer .ig {
+    font-family: 'Noto Serif KR', serif;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="stamp">EST. 2026 · SLOW COFFEE</div>
+    <h1>오후 세시</h1>
+    <div class="en">T H R E E &nbsp; P. M.</div>
+    <div class="tag">하루 중 가장 느린 한 시간, 당신의 커피</div>
+  </header>
+
+  <!-- SIGNATURE -->
+  <section class="signature">
+    <div class="sig-art">
+      <!-- 라떼 컵 일러스트 -->
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <!-- 받침 -->
+        <ellipse cx="50" cy="86" rx="34" ry="4" fill="#3E2817" opacity="0.35"/>
+        <!-- 컵 -->
+        <path d="M22 38 Q22 35 25 35 L75 35 Q78 35 78 38 L73 80 Q72 86 65 86 L35 86 Q28 86 27 80 Z"
+              fill="#FDF6E9" stroke="#3E2817" stroke-width="1.6"/>
+        <!-- 손잡이 -->
+        <path d="M78 45 Q90 45 90 56 Q90 67 78 67"
+              fill="none" stroke="#3E2817" stroke-width="1.6"/>
+        <!-- 커피 -->
+        <ellipse cx="50" cy="42" rx="26" ry="5" fill="#6B4423"/>
+        <!-- 라떼아트(하트) -->
+        <path d="M50 40 Q44 35 40 39 Q36 43 50 49 Q64 43 60 39 Q56 35 50 40 Z"
+              fill="#FDF6E9"/>
+        <!-- 김 -->
+        <path d="M40 28 Q43 24 40 20 Q37 16 40 12" fill="none" stroke="#FDF6E9" stroke-width="1.3" stroke-linecap="round" opacity="0.85"/>
+        <path d="M50 28 Q53 24 50 20 Q47 16 50 12" fill="none" stroke="#FDF6E9" stroke-width="1.3" stroke-linecap="round" opacity="0.85"/>
+        <path d="M60 28 Q63 24 60 20 Q57 16 60 12" fill="none" stroke="#FDF6E9" stroke-width="1.3" stroke-linecap="round" opacity="0.85"/>
+      </svg>
+    </div>
+    <div class="sig-info">
+      <div class="label">TODAY'S RECOMMEND</div>
+      <div class="name">흑임자 크림 라떼</div>
+      <div class="desc">고소하게 볶은 흑임자 크림을 얹은 우리 가게의 시그니처.<br>
+        한 모금에 따뜻한 오후가 펼쳐집니다.</div>
+      <div class="price">₩ 6,500</div>
+    </div>
+  </section>
+
+  <!-- MENU GRID -->
+  <div class="menu-grid">
+
+    <!-- COFFEE -->
+    <section class="category">
+      <div class="cat-head">
+        <span class="num">01</span>
+        <span class="ko">커피</span>
+        <span class="en">COFFEE</span>
+      </div>
+
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">에스프레소</div>
+          <div class="sub">Espresso · 깊고 진한 한 잔</div>
+        </div>
+        <div class="price">₩ 4,000</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">아메리카노</div>
+          <div class="sub">Americano · HOT / ICE</div>
+        </div>
+        <div class="price">₩ 4,500</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">카페 라떼</div>
+          <div class="sub">Café Latte · 부드러운 우유</div>
+        </div>
+        <div class="price">₩ 5,000</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">바닐라 라떼</div>
+          <div class="sub">Vanilla Latte · 마다가스카르 바닐라</div>
+        </div>
+        <div class="price">₩ 5,500</div>
+      </div>
+    </section>
+
+    <!-- NON-COFFEE -->
+    <section class="category">
+      <div class="cat-head">
+        <span class="num">02</span>
+        <span class="ko">논커피</span>
+        <span class="en">NON-COFFEE</span>
+      </div>
+
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">쑥 크림 라떼</div>
+          <div class="sub">Mugwort Latte · 봄의 향</div>
+        </div>
+        <div class="price">₩ 5,800</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">고구마 라떼</div>
+          <div class="sub">Sweet Potato Latte · 따끈한 군고구마</div>
+        </div>
+        <div class="price">₩ 5,800</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">밀크 초콜릿</div>
+          <div class="sub">Hot Chocolate · 70% 다크 카카오</div>
+        </div>
+        <div class="price">₩ 5,500</div>
+      </div>
+    </section>
+
+    <!-- TEA -->
+    <section class="category">
+      <div class="cat-head">
+        <span class="num">03</span>
+        <span class="ko">티</span>
+        <span class="en">TEA</span>
+      </div>
+
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">얼그레이</div>
+          <div class="sub">Earl Grey · 베르가못 향</div>
+        </div>
+        <div class="price">₩ 5,000</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">캐모마일</div>
+          <div class="sub">Chamomile · 하루의 끝</div>
+        </div>
+        <div class="price">₩ 5,000</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">유자 진저티</div>
+          <div class="sub">Yuzu Ginger · 따뜻하게</div>
+        </div>
+        <div class="price">₩ 5,500</div>
+      </div>
+    </section>
+
+    <!-- DESSERT -->
+    <section class="category">
+      <div class="cat-head">
+        <span class="num">04</span>
+        <span class="ko">디저트</span>
+        <span class="en">DESSERT</span>
+      </div>
+
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">바스크 치즈케이크</div>
+          <div class="sub">Basque Cheesecake · 매일 구워냄</div>
+        </div>
+        <div class="price">₩ 6,500</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">버터 휘낭시에</div>
+          <div class="sub">Financier · 발효버터 향</div>
+        </div>
+        <div class="price">₩ 3,500</div>
+      </div>
+      <div class="item">
+        <div class="name-wrap">
+          <div class="nm">플레인 스콘</div>
+          <div class="sub">Plain Scone · 클로티드 크림 곁들임</div>
+        </div>
+        <div class="price">₩ 4,000</div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="hours">OPEN 10:00 — 22:00</div>
+    <div class="quote">"오후 세시, 천천히 흐르는 시간"</div>
+    <div class="ig">@three.pm_cafe</div>
+  </footer>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>이은찬 명함</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  /* 인쇄 시 정확한 90x54mm */
+  @page { size: 90mm 54mm; margin: 0; }
+
+  :root {
+    --lavender:      #7C6BE0;
+    --lavender-dark: #5B49C7;
+    --text:          #1A1A1A;
+    --gray:          #8B8B8B;
+    --paper:         #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    background: #d8d4cc;
+    color: var(--text);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+  }
+
+  .label {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    letter-spacing: 0.45em;
+    color: #555;
+    text-transform: uppercase;
+  }
+
+  /* 화면용 카드 (90mm * 10 = 900px, 54mm * 10 = 540px) */
+  .card {
+    width: 900px;
+    height: 540px;
+    background: var(--paper);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+
+  /* 인쇄 시 mm 단위로 변환 */
+  @media print {
+    body { background: white; padding: 0; gap: 0; }
+    .label { display: none; }
+    .card {
+      width: 90mm;
+      height: 54mm;
+      box-shadow: none;
+      page-break-after: always;
+    }
+  }
+
+  /* ============ 앞면 ============ */
+  .front .dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--lavender);
+    position: absolute;
+    top: 60px;
+    left: 70px;
+  }
+
+  .front .name-block {
+    position: absolute;
+    top: 120px;
+    left: 70px;
+  }
+  .front .name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 78px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .front .name-en {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--gray);
+    letter-spacing: 0.25em;
+  }
+
+  .front .divider {
+    position: absolute;
+    top: 268px;
+    left: 70px;
+    width: 56px;
+    height: 3px;
+    background: var(--lavender);
+  }
+
+  .front .title-block {
+    position: absolute;
+    top: 300px;
+    left: 70px;
+    right: 70px;
+  }
+  .front .title {
+    font-size: 21px;
+    color: #444;
+    font-weight: 500;
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+  .front .specialty {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 38px;          /* 강조: 크기 ↑ */
+    font-weight: 800;
+    color: var(--lavender-dark);  /* 강조: 색 ↑ */
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .front .specialty .en {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--lavender);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    display: block;
+    margin-top: 6px;
+  }
+
+  .front .contact {
+    position: absolute;
+    bottom: 60px;
+    right: 70px;
+    text-align: right;
+  }
+  .front .contact .ctag {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--gray);
+    letter-spacing: 0.35em;
+    margin-bottom: 6px;
+  }
+  .front .contact .email {
+    font-size: 22px;
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  /* ============ 뒷면 ============ */
+  .back {
+    background: var(--lavender);
+    color: white;
+  }
+  .back .corner {
+    position: absolute;
+    top: 60px;
+    left: 70px;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    letter-spacing: 0.4em;
+    opacity: 0.75;
+  }
+  .back .dot-w {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 64px;
+    right: 70px;
+    opacity: 0.85;
+  }
+  .back .slogan {
+    position: absolute;
+    top: 50%;
+    left: 70px;
+    right: 70px;
+    transform: translateY(-50%);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 58px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.03em;
+  }
+  .back .slogan .em {
+    font-style: italic;
+    font-weight: 900;
+  }
+  .back .initial {
+    position: absolute;
+    bottom: 56px;
+    right: 70px;
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-style: italic;
+    letter-spacing: 0.2em;
+    opacity: 0.92;
+  }
+  .back .footer-email {
+    position: absolute;
+    bottom: 60px;
+    left: 70px;
+    font-family: 'Pretendard Variable', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+
+  <div class="label">FRONT · 앞면 (90 × 54 mm)</div>
+  <div class="card front">
+    <div class="dot"></div>
+
+    <div class="name-block">
+      <div class="name">이은찬</div>
+      <div class="name-en">LEE EUN CHAN</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="title-block">
+      <div class="title">감정일기 개발자</div>
+      <div class="specialty">
+        감정을 코딩하다.
+        <span class="en">Coding Emotions.</span>
+      </div>
+    </div>
+
+    <div class="contact">
+      <div class="ctag">CONTACT</div>
+      <div class="email">lec55606@gmail.com</div>
+    </div>
+  </div>
+
+  <div class="label">BACK · 뒷면 (90 × 54 mm)</div>
+  <div class="card back">
+    <div class="corner">EUNCHAN · 2026</div>
+    <div class="dot-w"></div>
+
+    <div class="slogan">
+      감정에도,<br>
+      <span class="em">데이터</span>가 있다.
+    </div>
+
+    <div class="footer-email">lec55606@gmail.com</div>
+    <div class="initial">E. C.</div>
+  </div>
+
+</body>
+</html>

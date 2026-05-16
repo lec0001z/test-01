@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>오후 세시 - 신메뉴 포스터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  @page { size: A4 portrait; margin: 0; }
+
+  :root {
+    --cream:  #F7EBDA;
+    --cream2: #EDDDC4;
+    --brown:  #3E2817;
+    --brown2: #6B4423;
+    --terra:  #C96F4A;
+    --peach:  #F08A6C;
+    --peach2: #E66A4D;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #c9bfae;
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    color: var(--brown);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 1080x1350 (4:5) 인스타 피드 사이즈 */
+  .poster {
+    width: 1080px;
+    height: 1350px;
+    margin: 24px auto;
+    background: var(--cream);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.22);
+    position: relative;
+    overflow: hidden;
+  }
+  @media screen and (max-width: 1200px) {
+    .poster { transform: scale(0.55); transform-origin: top center; margin-bottom: -600px; }
+  }
+
+  /* ===== 사진 영역 (포스터의 60%) ===== */
+  .hero {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 810px;        /* 1350 * 0.6 = 810 → 60% */
+    overflow: hidden;
+  }
+  .hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 40%;
+    display: block;
+  }
+  /* 사진 아래쪽을 크림색으로 자연스럽게 페이드 */
+  .hero::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 180px;
+    background: linear-gradient(to bottom, transparent, var(--cream) 92%);
+    pointer-events: none;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(62,40,23,0.35) 0%, transparent 35%);
+    pointer-events: none;
+  }
+
+  /* ===== 상단 뱃지 + 브랜드 ===== */
+  .badge {
+    position: absolute;
+    top: 50px;
+    left: 60px;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 28px;
+    background: rgba(247, 235, 218, 0.95);
+    color: var(--brown);
+    border-radius: 50px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.35em;
+    backdrop-filter: blur(8px);
+    z-index: 5;
+  }
+  .badge::before {
+    content: '';
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--peach2);
+  }
+  .brand {
+    position: absolute;
+    top: 62px;
+    right: 60px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 22px;
+    letter-spacing: 0.4em;
+    color: var(--cream);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    z-index: 5;
+  }
+
+  /* ===== 카피 영역 ===== */
+  .copy {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 820px;
+    text-align: center;
+    z-index: 4;
+  }
+  .copy .eyebrow {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 22px;
+    letter-spacing: 0.55em;
+    color: var(--terra);
+    font-weight: 500;
+    margin-bottom: 22px;
+  }
+  .copy h1 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 118px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--brown);
+    margin-bottom: 20px;
+  }
+  .copy h1 .accent {
+    color: var(--peach2);
+    font-style: italic;
+    position: relative;
+  }
+  .copy .sub {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 28px;
+    letter-spacing: 0.3em;
+    color: var(--brown);
+    opacity: 0.8;
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  /* ===== 가격/기간 ===== */
+  .infobar {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    bottom: 70px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 40px;
+    padding-top: 26px;
+    border-top: 2px solid var(--brown);
+  }
+  .infobar .price {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 54px;
+    font-weight: 900;
+    color: var(--peach2);
+    letter-spacing: -0.01em;
+  }
+  .infobar .price small {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--brown);
+    letter-spacing: 0.4em;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .infobar .stamp {
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    background: var(--peach2);
+    color: var(--cream);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-8deg);
+    font-family: 'Noto Serif KR', serif;
+    line-height: 1;
+    box-shadow: 0 6px 16px rgba(230,106,77,0.35);
+    flex-shrink: 0;
+  }
+  .infobar .stamp .big {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+  }
+  .infobar .stamp .sm {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    margin-top: 4px;
+  }
+  .infobar .period {
+    text-align: right;
+    font-family: 'Noto Serif KR', serif;
+  }
+  .infobar .period small {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--brown);
+    letter-spacing: 0.4em;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .infobar .period .date {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--brown);
+    letter-spacing: 0.02em;
+  }
+
+  .ig {
+    position: absolute;
+    bottom: 22px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 0.4em;
+    color: var(--brown);
+    opacity: 0.55;
+  }
+</style>
+</head>
+<body>
+
+<div class="poster">
+
+  <!-- 사진 (포스터 60%) -->
+  <!-- 대안 사진 URL (브랜드/라벨 없는 깨끗한 잔):
+       1. premium_photo-1687977547426-33ff1d8683d3  (현재, 복숭아티 잔 + 빨대)
+       2. premium_photo-1687977548336-a782439481c8  (복숭아 주스 + 복숭아 곁들임)
+       3. photo-1741241858511-13978ec7a067          (얼음 든 아이스티 잔)
+       4. photo-1597481499666-130f8eb2c9cd          (오렌지빛 음료 깨끗한 잔)
+       <img src="..."> 부분만 교체하면 됨 -->
+  <div class="hero">
+    <img src="https://plus.unsplash.com/premium_photo-1687977547426-33ff1d8683d3?w=1600&q=85&auto=format&fit=crop"
+         alt="복숭아 우롱 크림 티"
+         crossorigin="anonymous"
+         referrerpolicy="no-referrer">
+  </div>
+
+  <!-- 상단 뱃지 -->
+  <div class="badge">NEW · SUMMER LIMITED</div>
+  <div class="brand">오후 세시</div>
+
+  <!-- 메인 카피 -->
+  <div class="copy">
+    <div class="eyebrow">SEASON LIMITED · NEW</div>
+    <h1>복숭아가 <span class="accent">익을</span> 무렵</h1>
+    <div class="sub">Peach Oolong Cream Tea</div>
+  </div>
+
+  <!-- 가격 / 기간 -->
+  <div class="infobar">
+    <div class="price">
+      <small>PRICE</small>
+      ₩ 6,800
+    </div>
+    <div class="stamp">
+      <span class="big">NEW</span>
+      <span class="sm">2026</span>
+    </div>
+    <div class="period">
+      <small>PERIOD</small>
+      <div class="date">5.12 — 6.30</div>
+    </div>
+  </div>
+
+  <div class="ig">@three.pm_cafe  ·  오후 세시</div>
+
+</div>
+
+</body>
+</html>
